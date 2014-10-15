@@ -258,8 +258,13 @@
 						
 						// once scene and camera path are loaded, start animate() and tell VRClient ready.
 
-						animate();
-						VRClient.ready();
+						setTimeout(function() {
+
+							animate();
+							VRClient.ready();
+
+						}, 500);
+
 
 					} );
 
