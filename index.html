@@ -18,6 +18,7 @@
 	<body>
 
 		<script src="js/three.min.js"></script>
+		<script src="js/tween.min.js"></script>
 
 		<script src="js/VRControls.js"></script>
 		<script src="js/VREffect.js"></script>
@@ -294,10 +295,10 @@
 
 				if ( cameraPath !== undefined ) {
 
-					var time = ( performance.now() / 40000 ) % 1;
+					var time = time = TWEEN.Easing.Cubic.Out( Math.min( time / 60000, 1 ) ) * 0.998;
 
 					var pointA = cameraPath.getPointAt( time );
-					var pointB = cameraPath.getPointAt( Math.min( time + 0.015, 1 ) );
+					var pointB = cameraPath.getPointAt( Math.min( time + 0.001, 1 ) );
 
 					pointA.z = -pointA.z;
 					pointB.z = -pointB.z;
