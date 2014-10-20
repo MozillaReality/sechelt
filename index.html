@@ -259,7 +259,7 @@
 						
 						// once scene and camera path are loaded, start animate() and tell VRClient ready.
 
-						animate();
+						animate( performance.now() );
 						VRClient.ready();
 
 					} );
@@ -284,14 +284,9 @@
 
 			//
 
-			function animate() {
+			function animate( time ) {
 
 				requestAnimationFrame( animate );
-				render();
-
-			}
-
-			function render() {
 
 				if ( cameraPath !== undefined ) {
 
