@@ -58,6 +58,9 @@ window.VRClient = (function() {
   function VRClient(container) {
     var self = this;
 
+    // call back for render mode changes.
+    self.onRenderModeChange = null;
+
     // this promise resolves when VR devices are detected.
     self.getVR = new Promise(function (resolve, reject) {
       if (navigator.getVRDevices) {
@@ -101,6 +104,9 @@ window.VRClient = (function() {
         case 'start':
           self.startDemo();
           break;
+        case 'renderMode':
+          self.setRenderMode(msg.data);
+          break;
       }
     }, false);
   }
@@ -129,6 +135,7 @@ window.VRClient = (function() {
     return this.wait;
   };
 
+
   // if this demo has an exit
   VRClient.prototype.ended = function() {
     this.sendMessage('ended');
@@ -143,6 +150,20 @@ window.VRClient = (function() {
     self.getVR.then(function () {
       self.positionDevice.zeroSensor();
     });
+  };
+
+  VRClient.prototype.setRenderMode = function(mode) {
+    var self = this;
+
+    if (typeof self.onRenderModeChange == 'function') {
+      self.onRenderModeChange(mode);
+    }
+  };
+
+  VRClient.renderModes = VRClient.prototype.renderModes = {
+    normal: 1,
+    stereo: 2,
+    vr: 3
   };
 
   return new VRClient();
