@@ -30,55 +30,71 @@ THREE.C4DCurveLoader.prototype = {
 
 		var LinearCurve = function ( points ) {
 
-			var length = points.length / 3;
+			// [ point1, point2, point3, point4, ... ]
 
-			var pointA = new THREE.Vector3();
-			var pointB = new THREE.Vector3();
+			var point1 = new THREE.Vector3();
+			var point2 = new THREE.Vector3();
 
 			return {
 
 				getPointAt: function ( t ) {
 
-					if ( t <= 0 ) return new THREE.Vector3( points[ 0 ], points[ 1 ], points[ 2 ] );
-					if ( t >= 1 ) return new THREE.Vector3( points[ points.length - 3 ], points[ points.length - 2 ], points[ points.length - 1 ] );
+					if ( t <= 0 ) return points[ 0 ].clone();
+					if ( t >= 1 ) return points[ points.length - 1 ].clone();
 
-					var key = t * length;
+					var key = t * ( points.length - 1 );
 					var keyFloor = Math.floor( key );
 
-					var keyA = keyFloor * 3;
-					var keyB = keyA + 3;
+					var weight = key - keyFloor;
 
-					pointA.set( points[ keyA + 0 ], points[ keyA + 1 ], points[ keyA + 2 ] );
-					pointB.set( points[ keyB + 0 ], points[ keyB + 1 ], points[ keyB + 2 ] );
+					point1.copy( points[ keyFloor + 0 ] );
+					point2.copy( points[ keyFloor + 1 ] );
 
-					return new THREE.Vector3().copy( pointA ).lerp( pointB, key - keyFloor );
+					return new THREE.Vector3().copy( point1 ).lerp( point2, weight );
 
 				}
 
 			}
 
 		};
-		
+
 		var BezierCurve = function ( points ) {
 
-			var length = points.length / 9;
+			// [ point1, anchor1b, anchor2a, point2, anchor2b, anchor3a, point3, ... ]
 
-			var pointA = new THREE.Vector3();
-			var pointB = new THREE.Vector3();
+			var point1 = new THREE.Vector3();
+			var point2 = new THREE.Vector3();
+			var point3 = new THREE.Vector3();
+			var point4 = new THREE.Vector3();
 
-			var anchorA = new THREE.Vector3();
-			var anchorB = new THREE.Vector3();
+			var B1 = function ( t ) { return t * t * t };
+			var B2 = function ( t ) { return 3 * t * t * ( 1 - t ) };
+			var B3 = function ( t ) { return 3 * t * ( 1 - t ) * ( 1 - t ) };
+			var B4 = function ( t ) { return ( 1 - t ) * ( 1 - t ) * ( 1 - t ) };
 
 			return {
-			
+
 				getPointAt: function ( t ) {
-				
-					return new THREE.Vector3();
-				
+
+					if ( t <= 0 ) return points[ 0 ].clone();
+					if ( t >= 1 ) return points[ points.length - 1 ].clone();
+
+					var key = t * Math.floor( points.length / 3 );
+					var keyFloor = Math.floor( key );
+
+					var weight = 1 - ( key - keyFloor );
+
+					point1.copy( points[ keyFloor * 3 + 0 ] ).multiplyScalar( B1( weight ) );
+					point2.copy( points[ keyFloor * 3 + 1 ] ).multiplyScalar( B2( weight ) );
+					point3.copy( points[ keyFloor * 3 + 2 ] ).multiplyScalar( B3( weight ) );
+					point4.copy( points[ keyFloor * 3 + 3 ] ).multiplyScalar( B4( weight ) );
+
+					return new THREE.Vector3().add( point1 ).add( point2 ).add( point3 ).add( point4 );
+
 				}
-			
+
 			}
-		
+
 		};
 
 		var lines = text.split( '\r' );
@@ -87,28 +103,81 @@ THREE.C4DCurveLoader.prototype = {
 
 			var points = [];
 
-			for ( var i = 1; i < lines.length - 1; i ++ ) {
+			for ( var i = 1, l = lines.length - 1; i < l; i ++ ) {
 
 				var parts = lines[ i ].split( '\t' );
 
-				points.push(
-					parseFloat( parts[ 1 ] ),
-					parseFloat( parts[ 2 ] ),
-					parseFloat( parts[ 3 ] ),
+				if ( i === 1 ) {
 
-					parseFloat( parts[ 4 ] ),
-					parseFloat( parts[ 5 ] ),
-					parseFloat( parts[ 6 ] ),
+					// first point
 
-					parseFloat( parts[ 7 ] ),
-					parseFloat( parts[ 8 ] ),
-					parseFloat( parts[ 9 ] )
-				);
+					points.push(
+
+						new THREE.Vector3(
+							parseFloat( parts[ 1 ] ),
+							parseFloat( parts[ 2 ] ),
+							parseFloat( parts[ 3 ] )
+						),
+
+						new THREE.Vector3(
+							parseFloat( parts[ 1 ] ) + parseFloat( parts[ 7 ] ),
+							parseFloat( parts[ 2 ] ) + parseFloat( parts[ 8 ] ),
+							parseFloat( parts[ 3 ] ) + parseFloat( parts[ 9 ] )
+						)
+
+					);
+
+				} else if ( i === l - 1 ) {
+
+					// last point
+
+					points.push(
+
+						new THREE.Vector3(
+							parseFloat( parts[ 1 ] ) + parseFloat( parts[ 4 ] ),
+							parseFloat( parts[ 2 ] ) + parseFloat( parts[ 5 ] ),
+							parseFloat( parts[ 3 ] ) + parseFloat( parts[ 6 ] )
+						),
+
+						new THREE.Vector3(
+							parseFloat( parts[ 1 ] ),
+							parseFloat( parts[ 2 ] ),
+							parseFloat( parts[ 3 ] )
+						)
+
+					);
+
+
+				} else {
+
+					points.push(
+
+						new THREE.Vector3(
+							parseFloat( parts[ 1 ] ) + parseFloat( parts[ 4 ] ),
+							parseFloat( parts[ 2 ] ) + parseFloat( parts[ 5 ] ),
+							parseFloat( parts[ 3 ] ) + parseFloat( parts[ 6 ] )
+						),
+
+						new THREE.Vector3(
+							parseFloat( parts[ 1 ] ),
+							parseFloat( parts[ 2 ] ),
+							parseFloat( parts[ 3 ] )
+						),
+
+						new THREE.Vector3(
+							parseFloat( parts[ 1 ] ) + parseFloat( parts[ 7 ] ),
+							parseFloat( parts[ 2 ] ) + parseFloat( parts[ 8 ] ),
+							parseFloat( parts[ 3 ] ) + parseFloat( parts[ 9 ] )
+						)
+
+					);
+
+				}
 
 			}
 
 			return new BezierCurve( points );
-			
+
 		} else if ( /Point\tX\tY\tZ/.test( lines[ 0 ] ) ) {
 
 			var points = [];
@@ -118,9 +187,11 @@ THREE.C4DCurveLoader.prototype = {
 				var parts = lines[ i ].split( '\t' );
 
 				points.push(
-					parseFloat( parts[ 1 ] ),
-					parseFloat( parts[ 2 ] ),
-					parseFloat( parts[ 3 ] )
+					new THREE.Vector3(
+						parseFloat( parts[ 1 ] ),
+						parseFloat( parts[ 2 ] ),
+						parseFloat( parts[ 3 ] )
+					)
 				);
 
 			}
