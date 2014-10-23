@@ -18,6 +18,7 @@
 	<body>
 
 		<script src="js/three.min.js"></script>
+		<script src="js/tween.min.js"></script>
 
 		<script src="js/VRControls.js"></script>
 		<script src="js/VREffect.js"></script>
@@ -83,25 +84,36 @@
 				camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 2000 );
 				dolly.add( camera );
 
-				if ( parameters.mode === 'cardboard' ) {
-
-					controls = new THREE.DeviceOrientationControls( camera );
-					effect = new THREE.StereoEffect( renderer );
-
-				} else {
-
-					controls = new THREE.VRControls( camera );
-					effect = new THREE.VREffect( renderer );
-
-				}
+				changeRenderMode(VRClient.renderModes.normal);
 
 				effect.setSize( window.innerWidth, window.innerHeight );
 
+				VRClient.onRenderModeChange = changeRenderMode;
+
+				function changeRenderMode(mode) {
+					var modes = VRClient.renderModes;
+					if (mode == modes.normal) {
+						console.log('Mono mode');
+						controls = null;
+						effect = renderer;
+					} else if (mode == modes.stereo) {
+						console.log('Stereo mode');
+						controls = new THREE.DeviceOrientationControls( camera );
+						effect = new THREE.StereoEffect( renderer );
+					} else if (mode == modes.vr) {
+						console.log('VR mode');
+						controls = new THREE.VRControls( camera );
+						effect = new THREE.VREffect( renderer );
+					}
+				}
+
 				document.body.addEventListener( 'dblclick', function () {
+					changeRenderMode(VRClient.renderModes.vr);
+					setTimeout(function() {
+						effect.setFullScreen( true );
+					}, 100)
 
-					effect.setFullScreen( true );
-
-				} );
+				});
 
 				// skybox
 
@@ -255,16 +267,11 @@
 					loader.load( 'models/flightpath-1.txt', function ( line ) {
 
 						cameraPath = line;
-						
+
 						// once scene and camera path are loaded, start animate() and tell VRClient ready.
 
-						setTimeout(function() {
-
-							animate();
-							VRClient.ready();
-
-						}, 500);
-
+						animate( performance.now() );
+						VRClient.ready();
 
 					} );
 
@@ -288,21 +295,16 @@
 
 			//
 
-			function animate() {
+			function animate( time ) {
 
 				requestAnimationFrame( animate );
-				render();
-
-			}
-
-			function render() {
 
 				if ( cameraPath !== undefined ) {
 
-					var time = ( performance.now() / 40000 ) % 1;
+					var time = time = TWEEN.Easing.Cubic.Out( Math.min( time / 60000, 1 ) ) * 0.998;
 
 					var pointA = cameraPath.getPointAt( time );
-					var pointB = cameraPath.getPointAt( Math.min( time + 0.015, 1 ) );
+					var pointB = cameraPath.getPointAt( Math.min( time + 0.001, 1 ) );
 
 					pointA.z = -pointA.z;
 					pointB.z = -pointB.z;
@@ -314,7 +316,9 @@
 
 				}
 
-				controls.update();
+				if (controls) {
+					controls.update();
+				}
 
 				sky.position.copy( dolly.position );
 
