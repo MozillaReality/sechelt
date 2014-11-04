@@ -18,6 +18,7 @@
 	<body>
 
 		<script src="js/three.min.js"></script>
+		<script src="js/tween.min.js"></script>
 		<script src="js/VRControls.js"></script>
 		<script src="js/VREffect.js"></script>
 		<script src="js/DeviceOrientationControls.js"></script>
@@ -39,25 +40,12 @@
 
 			var camera, scene, renderer;
 			var controls, effect;
-
 			var controls2, clock = new THREE.Clock();
-
 			var sky, water;
-
 			var cameraPath;
 			var dolly;
 
-			/*
-			var loader = new THREE.C4DCurveLoader();
-			loader.load( 'models/flightpath-1.txt', function ( line ) {
-
-				cameraPath = line;
-
-			} );
-			*/
-
 			init();
-			//animate();
 
 
 			function init() {
@@ -67,10 +55,11 @@
 				renderer.setClearColor( 0x404040 );
 				document.body.appendChild( renderer.domElement );
 
+
 				// scene
 
 				scene = new THREE.Scene();
-				scene.fog = new THREE.Fog( 0xcacfde, 0, 6000 );
+				scene.fog = new THREE.Fog( 0xcacfde, 0, 10000 );
 
 				dolly = new THREE.Object3D();
 				dolly.position.set( 10000, 10000, 10000 );
@@ -99,17 +88,19 @@
 
 				} );
 
+
 				// skybox
 
-				var geometry = new THREE.SphereGeometry( 1000, 64, 32 );
+				var geometry = new THREE.SphereGeometry( 10000, 64, 32 );
 
 				var vertices = geometry.vertices;
 				var faces = geometry.faces;
 
 				var colorTop = new THREE.Color( 0xdc72aa );
 				var colorMiddle = new THREE.Color( 0xfbdfd3 );
-				var colorBottom = new THREE.Color( 0xd7b8b2 );
-
+				var colorBottom = new THREE.Color( 0xdc72aa );
+				
+				
 				for ( var i = 0, l = faces.length; i < l; i ++ ) {
 
 					var face = faces[ i ];
@@ -119,30 +110,32 @@
 					var vertex3 = vertices[ face.c ];
 
 					var color1 = colorMiddle.clone();
-					color1.lerp( vertex1.y > 0 ? colorTop : colorBottom, Math.abs( vertex1.y ) / 1000 );
+					color1.lerp( vertex1.y > 0 ? colorTop : colorBottom, Math.abs( vertex1.y ) / 6000 );
 
 					var color2 = colorMiddle.clone();
-					color2.lerp( vertex2.y > 0 ? colorTop : colorBottom, Math.abs( vertex2.y ) / 1000 );
+					color2.lerp( vertex2.y > 0 ? colorTop : colorBottom, Math.abs( vertex2.y ) / 6000 );
 
 					var color3 = colorMiddle.clone();
-					color3.lerp( vertex3.y > 0 ? colorTop : colorBottom, Math.abs( vertex3.y ) / 1000 );
+					color3.lerp( vertex3.y > 0 ? colorTop : colorBottom, Math.abs( vertex3.y ) / 6000 );
 
 					face.vertexColors.push( color1, color2, color3 );
 
 				}
 
 				var material = new THREE.MeshBasicMaterial( {
-					vertexColors: THREE.VertexColors,
+					//vertexColors: THREE.VertexColors,
 					side: THREE.BackSide,
 					depthWrite: false,
 					depthTest: false,
-					fog: false
+					fog: false,
+					map: THREE.ImageUtils.loadTexture( 'images/bg-2.png' )
 				} );
-
+				
 				sky = new THREE.Mesh( geometry, material );
 				scene.add( sky );
 
-				// water waves
+
+				// waves
 				
 				var geometry = new THREE.Geometry();
 
@@ -153,10 +146,10 @@
 
 				for ( var i = 0; i < 10000; i ++ ) {
 
-					vector.x = Math.random() * 4000 - 2000;
-					vector.z = Math.random() * 4000 - 2000;
+					vector.x = Math.random() * 40000 - 20000;
+					vector.z = Math.random() * 40000 - 20000;
 
-					var size = Math.random() * 2 + 1;
+					var size = Math.random() * 10 + 1;
 					var angle = Math.random() * Math.PI;
 
 					var vertex1 = vector.clone();
@@ -192,7 +185,7 @@
 				
 
 				// water texture
-				// Causes massive jank and out-of-memory errors
+				// Causes massive jank and out-of-memory errors, so I abandoned this approach for time being...
 				/*
 				var texture = THREE.ImageUtils.loadTexture( 'images/waves-2.png' );
 				texture.wrapS = THREE.RepeatWrapping;
@@ -209,6 +202,7 @@
 				scene.add( water2 );
 				*/
 
+
 				// water
 
 				var geometry = new THREE.PlaneBufferGeometry( 100000, 100000 );
@@ -218,32 +212,59 @@
 					transparent: true
 				} );
 				water = new THREE.Mesh( geometry, material );
-				water.position.y = 2;
+				water.position.y = 0;
 				water.rotation.x = - Math.PI / 2;
 				water.renderDepth = 2;
 				scene.add( water );
 
 
+				// lights
+
+				var directionalLight = new THREE.DirectionalLight( 0xffffff, 0.15 );
+				directionalLight.position.set( -1, 1, -1 );
+				scene.add( directionalLight );
+
+				var hemisphereLight = new THREE.HemisphereLight( 0xffffff, 0xffffff, 0.8 );
+				hemisphereLight.position.set( -1, 2, 1.5 );
+				scene.add( hemisphereLight );
 
 
 				// load scene
 
 				var loader = new THREE.ObjectLoader();
-				loader.load( 'models/scene-nov4-1.json', function ( object ) {
+				loader.load( 'models/scene-nov4.json', function ( object ) {
 
-					var landscape = object.getObjectByName( 'landscape' );
-					
-					var reflection = new THREE.Mesh( landscape.geometry, landscape.material.clone() );
+					var land = object.getObjectByName( 'land' ).children[0];
+					var reflection = new THREE.Mesh( land.geometry, land.material.clone() );
 					reflection.material.side = THREE.BackSide;
-					reflection.position.y = 7.7;
+					reflection.position.y = 0;
 					reflection.scale.y = -1;
-					landscape.parent.add( reflection );
+					land.parent.add( reflection );
+
+					var island = object.getObjectByName( 'island' ).children[0];
+					var reflection = new THREE.Mesh( island.geometry, island.material.clone() );
+					reflection.material.side = THREE.BackSide;
+					reflection.position.y = 0;
+					reflection.scale.y = -1;
+					island.parent.add( reflection );
 					
+					var rocks = object.getObjectByName( 'rocks' ).children[0];
+					var reflection = new THREE.Mesh( rocks.geometry, rocks.material.clone() );
+					reflection.material.side = THREE.BackSide;
+					reflection.position.y = 0;
+					reflection.scale.y = -1;
+					rocks.parent.add( reflection );
+
+					var trees = object.getObjectByName( 'trees' ).children[0];
+					var reflection = new THREE.Mesh( trees.geometry, trees.material.clone() );
+					reflection.material.side = THREE.BackSide;
+					reflection.position.y = 0;
+					reflection.scale.y = -1;
+					trees.parent.add( reflection );
 
 					scene.add( object );
-					console.log( landscape );
 
-					// load sounds
+					// sounds
 
 					//var listener = new THREE.AudioListener();
 					//camera.add( listener );
@@ -271,10 +292,10 @@
 					scene.add( sound );
 					*/
 
-					// load camera path
+					// camera path
 
 					var loader = new THREE.C4DCurveLoader();
-					loader.load( 'models/flightpath-nov3-1.txt', function ( line ) {
+					loader.load( 'models/flightpath-nov4.txt', function ( line ) {
 
 						cameraPath = line;
 						
@@ -319,7 +340,7 @@
 					//var pointA = cameraPath.getPointAt( time );
 					//var pointB = cameraPath.getPointAt( Math.min( time + 0.015, 1 ) );
 
-					var time = time = TWEEN.Easing.Cubic.Out( Math.min( time / 80000, 1 ) ) * 0.998;
+					var time = time = TWEEN.Easing.Sinusoidal.InOut( Math.min( time / 70000, 1 ) ) * 1;
 					var pointA = cameraPath.getPointAt( time );
 					var pointB = cameraPath.getPointAt( Math.min( time + 0.0015, 1 ) );
 
