@@ -229,7 +229,7 @@
 				// load scene
 
 				var loader = new THREE.ObjectLoader();
-				loader.load( 'models/scene-nov3-1.json', function ( object ) {
+				loader.load( 'models/scene-nov4-1.json', function ( object ) {
 
 					var landscape = object.getObjectByName( 'landscape' );
 					
@@ -308,33 +308,33 @@
 
 			}
 
-			function animate() {
+
+			function animate( time ) {
 
 				requestAnimationFrame( animate );
-				render();
-
-			}
-
-			function render() {
 
 				if ( cameraPath !== undefined ) {
 
-					var time = ( performance.now() / 100000 ) % 1;
+					//var time = ( performance.now() / 100000 ) % 1;
+					//var pointA = cameraPath.getPointAt( time );
+					//var pointB = cameraPath.getPointAt( Math.min( time + 0.015, 1 ) );
 
+					var time = time = TWEEN.Easing.Cubic.Out( Math.min( time / 80000, 1 ) ) * 0.998;
 					var pointA = cameraPath.getPointAt( time );
-					var pointB = cameraPath.getPointAt( Math.min( time + 0.015, 1 ) );
+					var pointB = cameraPath.getPointAt( Math.min( time + 0.0015, 1 ) );
 
 					pointA.z = -pointA.z;
 					pointB.z = -pointB.z;
 
 					dolly.position.copy( pointA );
 					dolly.lookAt( pointB );
-
 					dolly.rotateY( Math.PI ); // look forward
 
 				}
 
-				controls.update();
+				if (controls) {
+					controls.update();
+				}
 
 				sky.position.copy( dolly.position );
 
