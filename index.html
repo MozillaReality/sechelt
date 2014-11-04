@@ -18,15 +18,11 @@
 	<body>
 
 		<script src="js/three.min.js"></script>
-
 		<script src="js/VRControls.js"></script>
 		<script src="js/VREffect.js"></script>
-
 		<script src="js/DeviceOrientationControls.js"></script>
 		<script src="js/StereoEffect.js"></script>
-
 		<script src="js/C4DCurveLoader.js"></script>
-
 		<script src="js/vrclient.js"></script>
 
 		<script>
@@ -74,13 +70,13 @@
 				// scene
 
 				scene = new THREE.Scene();
-				scene.fog = new THREE.Fog( 0xcacfde, 0, 1000 );
+				scene.fog = new THREE.Fog( 0xcacfde, 0, 6000 );
 
 				dolly = new THREE.Object3D();
-				dolly.position.set( 500, 500, 500 );
+				dolly.position.set( 10000, 10000, 10000 );
 				scene.add( dolly );
 
-				camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 2000 );
+				camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 20000 );
 				dolly.add( camera );
 
 				if ( parameters.mode === 'cardboard' ) {
@@ -147,7 +143,7 @@
 				scene.add( sky );
 
 				// water waves
-
+				
 				var geometry = new THREE.Geometry();
 
 				var vertices = geometry.vertices;
@@ -193,6 +189,25 @@
 				mesh.position.y = 2.5;
 				mesh.renderDepth = 1;
 				scene.add( mesh );
+				
+
+				// water texture
+				// Causes massive jank and out-of-memory errors
+				/*
+				var texture = THREE.ImageUtils.loadTexture( 'images/waves-2.png' );
+				texture.wrapS = THREE.RepeatWrapping;
+				texture.wrapT = THREE.RepeatWrapping;
+				texture.repeat.set( 40, 40 );
+				var geometry = new THREE.PlaneGeometry( 10000, 10000, 1000, 1000 );
+				var material = new THREE.MeshBasicMaterial( {
+					//color: 0xffffff,
+					map: texture
+				} );
+				water2 = new THREE.Mesh( geometry, material );
+				water2.position.y = 3;
+				water2.rotation.x = - Math.PI / 2;
+				scene.add( water2 );
+				*/
 
 				// water
 
@@ -203,31 +218,37 @@
 					transparent: true
 				} );
 				water = new THREE.Mesh( geometry, material );
-				water.position.y = 2.;
+				water.position.y = 2;
 				water.rotation.x = - Math.PI / 2;
 				water.renderDepth = 2;
 				scene.add( water );
 
+
+
+
 				// load scene
 
 				var loader = new THREE.ObjectLoader();
-				loader.load( 'models/scene-1.json', function ( object ) {
+				loader.load( 'models/scene-nov3-1.json', function ( object ) {
 
-					var landscape = object.getObjectByName( 'lanscape' );
-
+					var landscape = object.getObjectByName( 'landscape' );
+					
 					var reflection = new THREE.Mesh( landscape.geometry, landscape.material.clone() );
 					reflection.material.side = THREE.BackSide;
 					reflection.position.y = 7.7;
 					reflection.scale.y = -1;
 					landscape.parent.add( reflection );
+					
 
 					scene.add( object );
+					console.log( landscape );
 
 					// load sounds
 
-					var listener = new THREE.AudioListener();
-					camera.add( listener );
+					//var listener = new THREE.AudioListener();
+					//camera.add( listener );
 
+					/*
 					var sound = new THREE.Audio( listener );
 					sound.load( 'sounds/78389__inchadney__seagulls.ogg' );
 					sound.position.set( 475, 50, 850 );
@@ -248,11 +269,12 @@
 					sound.setLoop( true );
 					sound.setRefDistance( 100 );
 					scene.add( sound );
+					*/
 
 					// load camera path
 
 					var loader = new THREE.C4DCurveLoader();
-					loader.load( 'models/flightpath-1.txt', function ( line ) {
+					loader.load( 'models/flightpath-nov3-1.txt', function ( line ) {
 
 						cameraPath = line;
 						
@@ -286,8 +308,6 @@
 
 			}
 
-			//
-
 			function animate() {
 
 				requestAnimationFrame( animate );
@@ -299,7 +319,7 @@
 
 				if ( cameraPath !== undefined ) {
 
-					var time = ( performance.now() / 40000 ) % 1;
+					var time = ( performance.now() / 100000 ) % 1;
 
 					var pointA = cameraPath.getPointAt( time );
 					var pointB = cameraPath.getPointAt( Math.min( time + 0.015, 1 ) );
