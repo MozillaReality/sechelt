@@ -295,15 +295,37 @@
 					// camera path
 
 					var loader = new THREE.C4DCurveLoader();
-					loader.load( 'models/flightpath-nov4.txt', function ( line ) {
+					loader.load( 'models/flightpath-nov4-bezier.txt', function ( curve ) {
 
-						cameraPath = line;
-						
+						cameraPath = curve.toLinearCurve( 1 ); // 1 = distance between points
+
+						// debug points
+
+						var geometry = new THREE.Geometry();
+						geometry.vertices = cameraPath.getPoints();
+						var material = new THREE.PointCloudMaterial( { size: 0.1 } );
+
+						var points = new THREE.PointCloud( geometry, material );
+						points.position.y = -1;
+						points.scale.z = -1;
+						scene.add( points );
+
+						// debug line
+
+						var geometry = new THREE.Geometry();
+						geometry.vertices = cameraPath.getPoints();
+						var material = new THREE.LineBasicMaterial();
+
+						var line = new THREE.Line( geometry, material );
+						line.position.y = -1;
+						line.scale.z = -1;
+						scene.add( line );
+
 						// once scene and camera path are loaded, start animate() and tell VRClient ready.
 
 						setTimeout(function() {
 
-							animate();
+							requestAnimationFrame( animate );
 							VRClient.ready();
 
 						}, 500);
@@ -336,13 +358,10 @@
 
 				if ( cameraPath !== undefined ) {
 
-					//var time = ( performance.now() / 100000 ) % 1;
-					//var pointA = cameraPath.getPointAt( time );
-					//var pointB = cameraPath.getPointAt( Math.min( time + 0.015, 1 ) );
+					time = TWEEN.Easing.Sinusoidal.InOut( Math.min( time / 70000, 1 ) ) * 0.9999;
 
-					var time = time = TWEEN.Easing.Sinusoidal.InOut( Math.min( time / 70000, 1 ) ) * 1;
 					var pointA = cameraPath.getPointAt( time );
-					var pointB = cameraPath.getPointAt( Math.min( time + 0.0015, 1 ) );
+					var pointB = cameraPath.getPointAt( Math.min( time + 0.0001, 1 ) );
 
 					pointA.z = -pointA.z;
 					pointB.z = -pointB.z;
