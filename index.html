@@ -99,8 +99,8 @@
 				var colorTop = new THREE.Color( 0xdc72aa );
 				var colorMiddle = new THREE.Color( 0xfbdfd3 );
 				var colorBottom = new THREE.Color( 0xdc72aa );
-				
-				
+
+
 				for ( var i = 0, l = faces.length; i < l; i ++ ) {
 
 					var face = faces[ i ];
@@ -130,13 +130,13 @@
 					fog: false,
 					map: THREE.ImageUtils.loadTexture( 'images/bg-2.png' )
 				} );
-				
+
 				sky = new THREE.Mesh( geometry, material );
 				scene.add( sky );
 
 
 				// waves
-				
+
 				var geometry = new THREE.Geometry();
 
 				var vertices = geometry.vertices;
@@ -182,7 +182,7 @@
 				mesh.position.y = 2.5;
 				mesh.renderDepth = 1;
 				scene.add( mesh );
-				
+
 
 				// water texture
 				// Causes massive jank and out-of-memory errors, so I abandoned this approach for time being...
@@ -247,7 +247,7 @@
 					reflection.position.y = 0;
 					reflection.scale.y = -1;
 					island.parent.add( reflection );
-					
+
 					var rocks = object.getObjectByName( 'rocks' ).children[0];
 					var reflection = new THREE.Mesh( rocks.geometry, rocks.material.clone() );
 					reflection.material.side = THREE.BackSide;
