@@ -52,6 +52,12 @@ THREE.C4DCurveLoader.prototype = {
 
 					return new THREE.Vector3().copy( point1 ).lerp( point2, weight );
 
+				},
+
+				getPoints: function () {
+
+					return points;
+
 				}
 
 			}
@@ -79,17 +85,73 @@ THREE.C4DCurveLoader.prototype = {
 					if ( t <= 0 ) return points[ 0 ].clone();
 					if ( t >= 1 ) return points[ points.length - 1 ].clone();
 
-					var key = t * Math.floor( points.length / 3 );
+					var key = t * Math.floor( points.length / 4 );
 					var keyFloor = Math.floor( key );
 
 					var weight = 1 - ( key - keyFloor );
 
-					point1.copy( points[ keyFloor * 3 + 0 ] ).multiplyScalar( B1( weight ) );
-					point2.copy( points[ keyFloor * 3 + 1 ] ).multiplyScalar( B2( weight ) );
-					point3.copy( points[ keyFloor * 3 + 2 ] ).multiplyScalar( B3( weight ) );
-					point4.copy( points[ keyFloor * 3 + 3 ] ).multiplyScalar( B4( weight ) );
+					point1.copy( points[ keyFloor * 4 + 0 ] ).multiplyScalar( B1( weight ) );
+					point2.copy( points[ keyFloor * 4 + 1 ] ).multiplyScalar( B2( weight ) );
+					point3.copy( points[ keyFloor * 4 + 2 ] ).multiplyScalar( B3( weight ) );
+					point4.copy( points[ keyFloor * 4 + 3 ] ).multiplyScalar( B4( weight ) );
 
 					return new THREE.Vector3().add( point1 ).add( point2 ).add( point3 ).add( point4 );
+
+				},
+
+				getPoints: function () {
+
+					return points;
+
+				},
+
+				toLinearCurve: function ( separation ) {
+
+					var prevPoint = this.getPointAt( 0 );
+					var newPoints = [ prevPoint ];
+					var distance = 0;
+
+					for ( var i = 1; i < 10000; i ++ ) {
+
+						var point = this.getPointAt( i / 10000 );
+						distance += prevPoint.distanceTo( point );
+
+						if ( distance > separation ) {
+
+							newPoints.push( point );
+							distance = 0;
+
+						}
+
+						prevPoint = point;
+
+					}
+
+					/*
+					var pointsAmount = points.length / 4;
+					var segmentSize = 1 / pointsAmount;
+
+					for ( var i = 0, il = points.length; i < il; i += 4 ) {
+
+						distance = 0;
+
+						distance += points[ i + 0 ].distanceTo( points[ i + 1 ] );
+						distance += points[ i + 1 ].distanceTo( points[ i + 2 ] );
+						distance += points[ i + 2 ].distanceTo( points[ i + 3 ] );
+
+						var segment = i / il;
+
+						for ( var j = 0, jl = distance / separation; j < jl; j ++ ) {
+
+							var point = this.getPointAt( segment + ( j / jl ) * segmentSize );
+							array.push( point );
+
+						}
+
+					}
+					*/
+
+					return new LinearCurve( newPoints );
 
 				}
 
@@ -98,7 +160,7 @@ THREE.C4DCurveLoader.prototype = {
 		};
 
 		var lines = text.split( '\r' );
-		
+
 		if ( /Point\tX\tY\tZ\t<- X\t<- Y\t<- Z\tX ->\tY ->\tZ ->/.test( lines[ 0 ] ) ) {
 
 			var points = [];
@@ -156,6 +218,12 @@ THREE.C4DCurveLoader.prototype = {
 							parseFloat( parts[ 1 ] ) + parseFloat( parts[ 4 ] ),
 							parseFloat( parts[ 2 ] ) + parseFloat( parts[ 5 ] ),
 							parseFloat( parts[ 3 ] ) + parseFloat( parts[ 6 ] )
+						),
+
+						new THREE.Vector3(
+							parseFloat( parts[ 1 ] ),
+							parseFloat( parts[ 2 ] ),
+							parseFloat( parts[ 3 ] )
 						),
 
 						new THREE.Vector3(
