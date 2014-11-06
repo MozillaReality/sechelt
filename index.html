@@ -61,11 +61,11 @@
 				scene = new THREE.Scene();
 				scene.fog = new THREE.Fog( 0xcacfde, 0, 10000 );
 
-				dolly = new THREE.Object3D();
+				dolly = new THREE.Group();
 				dolly.position.set( 10000, 10000, 10000 );
 				scene.add( dolly );
 
-				camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 20000 );
+				camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 20000 );
 				dolly.add( camera );
 
 				if ( parameters.mode === 'cardboard' ) {
