@@ -18,6 +18,8 @@
 
 	<body>
 
+		<script src="js/vrclient.js"></script>
+
 		<script src="js/three.min.js"></script>
 		<script src="js/tween.min.js"></script>
 		<script src="js/VRControls.js"></script>
@@ -25,7 +27,6 @@
 		<script src="js/DeviceOrientationControls.js"></script>
 		<script src="js/StereoEffect.js"></script>
 		<script src="js/C4DCurveLoader.js"></script>
-		<script src="js/vrclient.js"></script>
 
 		<script>
 
@@ -46,8 +47,7 @@
 			var cameraPath;
 			var dolly;
 
-			init();
-
+			setTimeout(init(), 500);
 
 			function init() {
 
@@ -326,20 +326,16 @@
 
 						// once scene and camera path are loaded, start animate() and tell VRClient ready.
 
-						setTimeout(function() {
 
-							requestAnimationFrame( animate );
-							VRClient.ready();
+						requestAnimationFrame( animate );
+						VRClient.ready();
 
-						}, 500);
 
 
 					} );
 
 				} );
 
-
-				//
 
 				window.addEventListener( 'resize', onWindowResize, false );
 
