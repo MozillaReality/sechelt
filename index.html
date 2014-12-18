@@ -18,6 +18,7 @@
 	<body>
 		<script src="js/three.min.js"></script>
 		<script src="js/tween.min.js"></script>
+		<script src="js/vrclient.js"></script>
 		<script src="js/VRControls.js"></script>
 		<script src="js/VREffect.js"></script>
 		<script src="js/DeviceOrientationControls.js"></script>
@@ -50,6 +51,8 @@
 		setTimeout(init(), 250);
 
 			function init() {
+				vrClient.ready();
+
 				renderer = new THREE.WebGLRenderer( { antialias: true } );
 				renderer.autoClear = false;
 				renderer.setClearColor( 0x404040 );
@@ -382,6 +385,7 @@
 			}
 
 
+
 			function animate( time ) {
 
 				requestAnimationFrame( animate );
@@ -389,8 +393,6 @@
 				if ( cameraPath !== undefined ) {
 
 					time = TWEEN.Easing.Sinusoidal.InOut( Math.min( time / 70000, 1 ) ) * 0.9999;
-
-					//console.log(time);
 
 					var pointA = cameraPath.getPointAt( time );
 					var pointB = cameraPath.getPointAt( Math.min( time + 0.0001, 1 ) );
