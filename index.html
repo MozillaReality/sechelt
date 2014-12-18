@@ -18,7 +18,6 @@
 	<body>
 		<script src="js/three.min.js"></script>
 		<script src="js/tween.min.js"></script>
-		<script src="js/vrclient.js"></script>
 		<script src="js/VRControls.js"></script>
 		<script src="js/VREffect.js"></script>
 		<script src="js/DeviceOrientationControls.js"></script>
@@ -51,8 +50,6 @@
 		setTimeout(init(), 250);
 
 			function init() {
-				VRClient.ready();
-
 				renderer = new THREE.WebGLRenderer( { antialias: true } );
 				renderer.autoClear = false;
 				renderer.setClearColor( 0x404040 );
