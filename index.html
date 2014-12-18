@@ -7,7 +7,6 @@
 		<meta content="Josh Carpenter%0DMr.doob%0D—%0Dthree.js, Cinema 4D" name="description">
 		<style>
 			body {
-				font-family: Monospace;
 				background-color: #000;
 				color: #fff;
 				margin: 0px;
@@ -17,81 +16,118 @@
 	</head>
 
 	<body>
-
-		<script src="js/vrclient.js"></script>
-
 		<script src="js/three.min.js"></script>
 		<script src="js/tween.min.js"></script>
 		<script src="js/VRControls.js"></script>
 		<script src="js/VREffect.js"></script>
 		<script src="js/DeviceOrientationControls.js"></script>
+		<script src="js/OrbitControls.js"></script>
 		<script src="js/StereoEffect.js"></script>
 		<script src="js/C4DCurveLoader.js"></script>
 
 		<script>
 
-			var parameters = ( function () {
-				var parameters = {};
-				var parts = window.location.search.substr( 1 ).split( '&' );
-				for ( var i = 0; i < parts.length; i ++ ) {
-					var parameter = parts[ i ].split( '=' );
-					parameters[ parameter[ 0 ] ] = parameter[ 1 ];
-				}
-				return parameters;
-			} )();
+		var parameters = ( function () {
+			var parameters = {};
+			var parts = window.location.search.substr( 1 ).split( '&' );
+			for ( var i = 0; i < parts.length; i ++ ) {
+				var parameter = parts[ i ].split( '=' );
+				parameters[ parameter[ 0 ] ] = parameter[ 1 ];
+			}
+			return parameters;
+		} )();
 
-			var camera, scene, renderer;
-			var controls, effect;
-			var controls2, clock = new THREE.Clock();
-			var sky, water;
-			var cameraPath;
-			var dolly;
+		var camera, scene, renderer;
+		var controls, effect;
+		var controls2, clock = new THREE.Clock();
+		var sky, water;
+		var cameraPath;
+		var dolly;
 
-			setTimeout(init(), 250);
+
+
+
+		setTimeout(init(), 250);
 
 			function init() {
-
 				renderer = new THREE.WebGLRenderer( { antialias: true } );
 				renderer.autoClear = false;
 				renderer.setClearColor( 0x404040 );
+
 				document.body.appendChild( renderer.domElement );
-
-
-				// scene
 
 				scene = new THREE.Scene();
 				scene.fog = new THREE.Fog( 0xcacfde, 0, 10000 );
 
 				dolly = new THREE.Group();
 				dolly.position.set( 10000, 10000, 10000 );
+
 				scene.add( dolly );
 
 				camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 20000 );
+				camera.position.z = 0.0001;
 				dolly.add( camera );
 
-				if ( parameters.mode === 'cardboard' ) {
+				// Effect and Controls for VR
+				var vrEffect = new THREE.VREffect( renderer );
+				var vrControls = new THREE.VRControls( camera );
 
-					controls = new THREE.DeviceOrientationControls( camera );
-					effect = new THREE.StereoEffect( renderer );
+				// Effect for cardboard
+				var cbControls = new THREE.DeviceOrientationControls( camera );
+				var cbEffect = new THREE.StereoEffect( renderer );
 
+				// Use OrbitControls for mono mode.
+				var monoControls = new THREE.OrbitControls( camera );
+
+				function changeMode(mode) {
+					console.log('changing mode: ' + mode);
+					switch(mode) {
+						case 'mono':
+							effect = renderer;
+							controls = monoControls;
+							break;
+						case 'vr':
+							controls = vrControls;
+							effect = vrEffect;
+							break;
+						case 'stereo':
+							controls = cbControls;
+							effect = cbEffect;
+							break;
+					}
+					effect.setSize( window.innerWidth, window.innerHeight );
+				};
+
+				if (parameters.mode) {
+					changeMode(parameters.mode);
 				} else {
+					changeMode('mono');
+				};
 
-					controls = new THREE.VRControls( camera );
-					effect = new THREE.VREffect( renderer );
-
-				}
-
-				effect.setSize( window.innerWidth, window.innerHeight );
-
-				document.body.addEventListener( 'dblclick', function () {
+				function enterVr() {
+					controls = vrControls;
+					effect = vrEffect;
 
 					effect.setFullScreen( true );
+				};
 
-				} );
+				function handleFsChange(e) {
+		      var fullscreenElement = document.fullscreenElement ||
+		        document.mozFullScreenElement ||
+		        document.webkitFullscreenElement;
+
+		      if (fullscreenElement == null) {
+		      	effect = renderer;
+		        controls = monoControls;
+		      }
+		    };
+
+		    document.addEventListener('mozfullscreenchange', handleFsChange);
+    		document.addEventListener('webkitfullscreenchange', handleFsChange)
+				document.body.addEventListener( 'dblclick', enterVr);
 
 
 				// skybox
-
 				var geometry = new THREE.SphereGeometry( 10000, 64, 32 );
 
 				var vertices = geometry.vertices;
@@ -101,9 +137,7 @@
 				var colorMiddle = new THREE.Color( 0xfbdfd3 );
 				var colorBottom = new THREE.Color( 0xdc72aa );
 
-
 				for ( var i = 0, l = faces.length; i < l; i ++ ) {
-
 					var face = faces[ i ];
 
 					var vertex1 = vertices[ face.a ];
@@ -137,7 +171,6 @@
 
 
 				// waves
-
 				var geometry = new THREE.Geometry();
 
 				var vertices = geometry.vertices;
@@ -324,11 +357,9 @@
 						scene.add( line );
 						*/
 
-						// once scene and camera path are loaded, start animate() and tell VRClient ready.
 
 
 						requestAnimationFrame( animate );
-						VRClient.ready();
 
 
 
@@ -358,6 +389,8 @@
 				if ( cameraPath !== undefined ) {
 
 					time = TWEEN.Easing.Sinusoidal.InOut( Math.min( time / 70000, 1 ) ) * 0.9999;
+
+					//console.log(time);
 
 					var pointA = cameraPath.getPointAt( time );
 					var pointB = cameraPath.getPointAt( Math.min( time + 0.0001, 1 ) );
