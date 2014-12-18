@@ -126,6 +126,16 @@
     		document.addEventListener('webkitfullscreenchange', handleFsChange)
 				document.body.addEventListener( 'dblclick', enterVr);
 
+				function handlePostmessage(e) {
+					if (e.data.mode) {
+						changeMode(e.data.mode);
+					} else if (e.data.fullscreen) {
+						enterVr();
+					}
+			  }
+
+		  	window.addEventListener('message', handlePostmessage);
+
 
 				// skybox
 				var geometry = new THREE.SphereGeometry( 10000, 64, 32 );
