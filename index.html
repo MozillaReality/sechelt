@@ -105,10 +105,13 @@
 				};
 
 				function enterVr() {
-					controls = vrControls;
-					effect = vrEffect;
+					// check to see if we are in iframe before setting fullscreen.
+					if(!window.frameElement) {
+						controls = vrControls;
+						effect = vrEffect;
 
-					effect.setFullScreen( true );
+						effect.setFullScreen( true );
+					}
 				};
 
 				function handleFsChange(e) {
@@ -129,8 +132,6 @@
 				function handlePostmessage(e) {
 					if (e.data.mode) {
 						changeMode(e.data.mode);
-					} else if (e.data.fullscreen) {
-						enterVr();
 					}
 			  }
 
