@@ -40,7 +40,7 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 	// This option actually enables dollying in and out; left as "zoom" for
 	// backwards compatibility
-	this.noZoom = false;
+	this.noZoom = true;
 	this.zoomSpeed = 1.0;
 
 	// Limits to how far you can dolly in and out
@@ -49,7 +49,7 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 	// Set to true to disable this control
 	this.noRotate = false;
-	this.rotateSpeed = 1.0;
+	this.rotateSpeed = 0.5;
 
 	// Set to true to disable this control
 	this.noPan = false;
@@ -655,8 +655,8 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 	this.domElement.addEventListener( 'contextmenu', function ( event ) { event.preventDefault(); }, false );
 	this.domElement.addEventListener( 'mousedown', onMouseDown, false );
-	//this.domElement.addEventListener( 'mousewheel', onMouseWheel, false );
-	//this.domElement.addEventListener( 'DOMMouseScroll', onMouseWheel, false ); // firefox
+	this.domElement.addEventListener( 'mousewheel', onMouseWheel, false );
+	this.domElement.addEventListener( 'DOMMouseScroll', onMouseWheel, false ); // firefox
 
 	this.domElement.addEventListener( 'touchstart', touchstart, false );
 	this.domElement.addEventListener( 'touchend', touchend, false );
