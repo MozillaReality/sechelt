@@ -6,7 +6,7 @@
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<meta content="Josh Carpenter%0DMr.doob%0D—%0Dthree.js, Cinema 4D" name="description">
 		<style>
-			body {
+			html, body {
 				background-color: #000;
 				color: #fff;
 				margin: 0px;
@@ -24,9 +24,7 @@
 		<script src="js/OrbitControls.js"></script>
 		<script src="js/StereoEffect.js"></script>
 		<script src="js/C4DCurveLoader.js"></script>
-
 		<script>
-
 		var parameters = ( function () {
 			var parameters = {};
 			var parts = window.location.search.substr( 1 ).split( '&' );
@@ -43,8 +41,6 @@
 		var sky, water;
 		var cameraPath;
 		var dolly;
-
-
 
 
 		setTimeout(init(), 250);
