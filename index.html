@@ -20,10 +20,9 @@
 		<script src="js/tween.min.js"></script>
 		<script src="js/VRControls.js"></script>
 		<script src="js/VREffect.js"></script>
-		<script src="js/DeviceOrientationControls.js"></script>
-		<script src="js/OrbitControls.js"></script>
-		<script src="js/StereoEffect.js"></script>
 		<script src="js/C4DCurveLoader.js"></script>
+		<script src="js/webvr-polyfill.js"></script>
+		<script src="js/webvr-manager.js"></script>
 		<script>
 
 		var parameters = ( function () {
@@ -42,6 +41,7 @@
 		var sky, water;
 		var cameraPath;
 		var dolly;
+    var manager;
 
 		function init() {
 			renderer = new THREE.WebGLRenderer( { antialias: true } );
@@ -63,86 +63,13 @@
 			dolly.add( camera );
 
 			// Effect and Controls for VR
-			var vrEffect = new THREE.VREffect( renderer );
-			var vrControls = new THREE.VRControls( camera );
+			effect = new THREE.VREffect( renderer );
+			controls = new THREE.VRControls( camera );
 
-			// Effect for cardboard
-			var cbControls = new THREE.DeviceOrientationControls( camera );
-			var cbEffect = new THREE.StereoEffect( renderer );
+      onWindowResize();
 
-			// Use OrbitControls for mono mode.
-			var monoControls = new THREE.OrbitControls( camera );
-
-			function changeMode(mode) {
-				console.log('changing mode: ' + mode);
-				switch(mode) {
-					case 'mono':
-						monoControls.enabled = true;
-						effect = renderer;
-						controls = monoControls;
-						break;
-					case 'vr':
-						monoControls.enabled = false;
-						controls = vrControls;
-						effect = vrEffect;
-						rewind();
-						play();
-						break;
-					case 'stereo':
-						controls = cbControls;
-						effect = cbEffect;
-						break;
-				}
-				effect.setSize( window.innerWidth, window.innerHeight );
-			};
-
-			if (parameters.mode) {
-				changeMode(parameters.mode);
-			} else {
-				changeMode('mono');
-			};
-
-			function enterVr() {
-				// check to see if we are in iframe before setting fullscreen.
-				if(!window.frameElement) {
-					changeMode('vr');
-
-					effect.setFullScreen( true );
-				}
-			};
-
-			function handleFsChange(e) {
-	      var fullscreenElement = document.fullscreenElement ||
-	        document.mozFullScreenElement ||
-	        document.webkitFullscreenElement;
-
-	      if (fullscreenElement == null) {
-	      	changeMode('mono');
-	      }
-	    };
-
-	    document.addEventListener('mozfullscreenchange', handleFsChange);
-  		document.addEventListener('webkitfullscreenchange', handleFsChange)
-			document.body.addEventListener( 'dblclick', enterVr);
-
-			function handlePostmessage(e) {
-				if (e.data.mode) {
-					changeMode(e.data.mode);
-				}
-				if (e.data.control) {
-					switch(e.data.control) {
-						case 'togglePlay':
-							togglePlay();
-							break;
-						case 'rewind':
-							rewind();
-							break;
-					}
-				}
-		  }
-
-	  	window.addEventListener('message', handlePostmessage);
-
+      // Initialize the WebVR manager.
+      manager = new WebVRManager(effect);
 
 			// skybox
 			var geometry = new THREE.SphereGeometry( 10000, 64, 32 );
@@ -453,7 +380,11 @@
 			water.position.x = dolly.position.x;
 			water.position.z = dolly.position.z;
 
-			effect.render( scene, camera );
+      if (manager.isVRMode()) {
+        effect.render( scene, camera );
+      } else {
+        renderer.render( scene, camera );
+      }
 
 		}
 
