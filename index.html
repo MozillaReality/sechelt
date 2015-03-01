@@ -23,6 +23,8 @@
 		<script src="js/C4DCurveLoader.js"></script>
 		<script src="js/webvr-polyfill.js"></script>
 		<script src="js/webvr-manager.js"></script>
+		<script src="js/utils.js"></script>
+		<script src="js/vruikit.js"></script>
 		<script>
 
 		var parameters = ( function () {
@@ -44,6 +46,7 @@
     var manager;
 
 		function init() {
+
 			renderer = new THREE.WebGLRenderer( { antialias: true } );
 			renderer.autoClear = false;
 			renderer.setClearColor( 0x404040 );
@@ -71,7 +74,7 @@
       // Initialize the WebVR manager.
       manager = new WebVRManager(effect);
 
-			// skybox
+			// Create skybox
 			var geometry = new THREE.SphereGeometry( 10000, 64, 32 );
 
 			var vertices = geometry.vertices;
@@ -114,7 +117,7 @@
 			scene.add( sky );
 
 
-			// waves
+			// Create waves
 			var geometry = new THREE.Geometry();
 
 			var vertices = geometry.vertices;
@@ -162,7 +165,8 @@
 			scene.add( mesh );
 
 
-			// water texture
+			// Water texture
+
 			// Causes massive jank and out-of-memory errors, so I abandoned this approach for time being...
 			/*
 			var texture = THREE.ImageUtils.loadTexture( 'images/waves-2.png' );
@@ -181,7 +185,7 @@
 			*/
 
 
-			// water
+			// Create water
 
 			var geometry = new THREE.PlaneBufferGeometry( 100000, 100000 );
 			var material = new THREE.MeshBasicMaterial( {
@@ -196,7 +200,7 @@
 			scene.add( water );
 
 
-			// lights
+			// Create lights
 
 			var directionalLight = new THREE.DirectionalLight( 0xffffff, 0.15 );
 			directionalLight.position.set( -1, 1, -1 );
@@ -207,10 +211,80 @@
 			scene.add( hemisphereLight );
 
 
-			// load scene
+			// Explode objects function
 
-			var loader = new THREE.ObjectLoader();
-			loader.load( 'models/scene-nov4.json', function ( object ) {
+			function explode( geometry, material ) {
+
+				var group = new THREE.Group();
+
+				for ( var i = 0; i < geometry.faces.length; i ++ ) {
+
+					var face = geometry.faces[ i ];
+
+					var vertexA = geometry.vertices[ face.a ].clone();
+					var vertexB = geometry.vertices[ face.b ].clone();
+					var vertexC = geometry.vertices[ face.c ].clone();
+
+					var geometry2 = new THREE.Geometry();
+					geometry2.vertices.push( vertexA, vertexB, vertexC );
+					geometry2.faces.push( new THREE.Face3( 0, 1, 2 ) );
+
+					var mesh = new THREE.Mesh( geometry2, material );
+					mesh.position.sub( geometry2.center() );
+					group.add( mesh );
+
+				}
+
+				return group;
+
+			}
+
+
+			// Create introduction components
+			
+			var geometry = new THREE.IcosahedronGeometry( 20, 1 );
+			var material = new THREE.MeshBasicMaterial( { color: 0xffffff, wireframe: false, transparent: true, side: THREE.DoubleSide } );
+				var sphere = explode( geometry, material );
+			// dolly.add( sphere )
+
+
+			// Make labels
+
+			// function makeCurvedLabel(text, opts) {
+			// 	var label = new VRUIKit.TextLabel(text, opts);
+			// 	var shapeMesh = VRUIKit.makeCurvedPlane( opts.width, opts.height, opts.radius, 0xffffff);
+			// 	shapeMesh.material.map = label.mesh.material.map; // map label texture to shape
+			// 	label.mesh = shapeMesh; // reassign label mesh
+			// 	return label;
+			// }
+
+			// var shapeMesh = VRUIKit.makeCurvedPlane( 1, 0.4, 0.6, 0xff0000);
+			// shapeMesh.position.z = -2;
+			// console.log(shapeMesh);
+			// dolly.add(shapeMesh);
+
+			// var label = new VRUIKit.TextLabel('text', {
+			// 	width: 1, height: 0.4,
+			// 	background: 'red'
+			// });
+
+			// label.mesh.position.z = -1;
+			// camera.add(label.mesh)
+
+			// var title = makeCurvedLabel('WELCOME TO THE VR WEB', {
+			// 	width: 1, height: 0.5, radius: 0.8,
+			// 	background: 'white',
+			// 	color: 'red'
+			// })
+
+			// camera.add( title.mesh );
+
+			// title.mesh.position.set( 0, 0, -2 );
+
+			// Load scene
+
+			var loadScene = new THREE.ObjectLoader();
+			loadScene.load( 'models/scene-nov4.json', function ( object ) {
 
 				var land = object.getObjectByName( 'land' ).children[0];
 				var reflection = new THREE.Mesh( land.geometry, land.material.clone() );
@@ -242,38 +316,40 @@
 
 				scene.add( object );
 
-				// sounds
 
-				//var listener = new THREE.AudioListener();
-				//camera.add( listener );
+
+				// Create sounds
 
 				/*
-				var sound = new THREE.Audio( listener );
-				sound.load( 'sounds/78389__inchadney__seagulls.ogg' );
-				sound.position.set( 475, 50, 850 );
-				sound.setLoop( true );
-				sound.setRefDistance( 100 );
-				scene.add( sound );
+					var listener = new THREE.AudioListener();
+					camera.add( listener );
 
-				var sound = new THREE.Audio( listener );
-				sound.load( 'sounds/23707__hazure__seagull.ogg' );
-				sound.position.set( 10, 50, -200 );
-				sound.setLoop( true );
-				sound.setRefDistance( 100 );
-				scene.add( sound );
+					var sound = new THREE.Audio( listener );
+					sound.load( 'sounds/78389__inchadney__seagulls.ogg' );
+					sound.position.set( 475, 50, 850 );
+					sound.setLoop( true );
+					sound.setRefDistance( 100 );
+					scene.add( sound );
 
-				var sound = new THREE.Audio( listener );
-				sound.load( 'sounds/235428__allanz10d__calm-ocean-breeze-simulation.ogg' );
-				sound.position.set( -30, 0, -750 );
-				sound.setLoop( true );
-				sound.setRefDistance( 100 );
-				scene.add( sound );
+					var sound = new THREE.Audio( listener );
+					sound.load( 'sounds/23707__hazure__seagull.ogg' );
+					sound.position.set( 10, 50, -200 );
+					sound.setLoop( true );
+					sound.setRefDistance( 100 );
+					scene.add( sound );
+
+					var sound = new THREE.Audio( listener );
+					sound.load( 'sounds/235428__allanz10d__calm-ocean-breeze-simulation.ogg' );
+					sound.position.set( -30, 0, -750 );
+					sound.setLoop( true );
+					sound.setRefDistance( 100 );
+					scene.add( sound );
 				*/
 
-				// camera path
+				// Load camera path
 
-				var loader = new THREE.C4DCurveLoader();
-				loader.load( 'models/flightpath-nov4-bezier.txt', function ( curve ) {
+				var loadCameraPath = new THREE.C4DCurveLoader();
+				loadCameraPath.load( 'models/flightpath-nov4-bezier.txt', function ( curve ) {
 
 					cameraPath = curve.toLinearCurve( 1 ); // 1 = distance between points
 
@@ -301,16 +377,11 @@
 					scene.add( line );
 					*/
 
-
-
 					requestAnimationFrame( animate );
-
-
 
 				} );
 
 			} );
-
 
 			window.addEventListener( 'resize', onWindowResize, false );
 			//document.body.addEventListener('click', togglePlay);
@@ -338,9 +409,7 @@
 		};
 
 
-
-
-		var currentTime = null,
+		var currentTime = 28000,
 			startTime = null;
 			gotime = null;
 
@@ -350,6 +419,7 @@
 		function animate( time ) {
 
 			requestAnimationFrame( animate );
+			TWEEN.update();
 
 			if ( cameraPath !== undefined ) {
 				if (!startTime) startTime = time;
@@ -368,7 +438,6 @@
 				dolly.position.copy( pointA );
 				dolly.lookAt( pointB );
 				dolly.rotateY( Math.PI ); // look forward
-
 			}
 
 			if (controls) {

@@ -218,8 +218,12 @@ WebVRManager.prototype.toggleVRMode = function() {
 };
 
 WebVRManager.prototype.onFullscreenChange = function(e) {
-  // If we leave full-screen, also exit VR mode.
-  if (document.webkitFullscreenElement === null) {
+  function isDocumentInFullScreenMode() {
+    return ((document.fullscreenElement && document.fullscreenElement !== null) ||    // alternative standard methods
+        document.mozFullScreen || document.webkitIsFullScreen);                   // current working methods
+  }
+  
+  if (!isDocumentInFullScreenMode()) {
     this.exitVR();
   }
 };
@@ -283,7 +287,10 @@ WebVRManager.prototype.enterVR = function() {
     // Enter fullscreen unless we're on iOS (fullscreen not available).
     this.effect.setFullScreen(true);
     // Orientation lock.
-    screen.orientation.lock('landscape');
+    if (screen.hasOwnProperty('orientation')) {
+      screen.orientation.lock('landscape');  
+    }
+    
   }
   // Set style on button.
   this.setMode(Modes.IMMERSED);
@@ -295,7 +302,9 @@ WebVRManager.prototype.exitVR = function() {
     // Leave fullscreen unless we're on iOS (fullscreen not available).
     this.effect.setFullScreen(false);
     // Unlock orientation.
-    screen.orientation.unlock();
+    if (screen.hasOwnProperty('orientation')) {
+      screen.orientation.unlock();
+    }
   }
   // Relinquish wake lock.
   this.releaseWakeLock();
