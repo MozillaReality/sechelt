@@ -1,0 +1,28 @@
+{
+  "sechelt-intro.sketch" : {
+    "Page 1" : {
+      "tag" : {
+        "tag.png" : {
+          "format" : "png",
+          "height" : 363,
+          "x" : 1120,
+          "y" : 55,
+          "width" : 644,
+          "name" : "tag",
+          "scale" : 2
+        }
+      },
+      "darken" : {
+        "darken.png" : {
+          "format" : "png",
+          "height" : 450,
+          "x" : 2,
+          "y" : 0,
+          "width" : 3595,
+          "name" : "darken",
+          "scale" : 1
+        }
+      }
+    }
+  }
+}

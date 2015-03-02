@@ -191,7 +191,6 @@ VRUIKit.makeFrame = function( width, height, depth, renderWidth, renderHeight, r
 }
 
 VRUIKit.makeCurvedPlane = function( width, height, radius, color ) {
-  
   var C = 2 * Math.PI * radius;
   var thetaLength = (Math.PI*2) * (width/C);
 

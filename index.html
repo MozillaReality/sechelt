@@ -23,8 +23,9 @@
 		<script src="js/C4DCurveLoader.js"></script>
 		<script src="js/webvr-polyfill.js"></script>
 		<script src="js/webvr-manager.js"></script>
-		<script src="js/utils.js"></script>
-		<script src="js/vruikit.js"></script>
+		<script src="js/lib/utils.js"></script>
+		<script src="js/lib/vruikit.js"></script>
+		<script src="js/sketch2three.js"></script>
 		<script>
 
 		var parameters = ( function () {
@@ -61,7 +62,7 @@
 
 			scene.add( dolly );
 
-			camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 20000 );
+			camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 20000 );
 			camera.position.z = 0.0001;
 			dolly.add( camera );
 
@@ -71,10 +72,11 @@
 
       onWindowResize();
 
-      // Initialize the WebVR manager.
-      manager = new WebVRManager(effect);
+      manager = new WebVRManager(effect); // Initialize the WebVR manager.
+
 
 			// Create skybox
+
 			var geometry = new THREE.SphereGeometry( 10000, 64, 32 );
 
 			var vertices = geometry.vertices;
@@ -118,6 +120,7 @@
 
 
 			// Create waves
+
 			var geometry = new THREE.Geometry();
 
 			var vertices = geometry.vertices;
@@ -211,35 +214,6 @@
 			scene.add( hemisphereLight );
 
 
-			// Explode objects function
-
-			function explode( geometry, material ) {
-
-				var group = new THREE.Group();
-
-				for ( var i = 0; i < geometry.faces.length; i ++ ) {
-
-					var face = geometry.faces[ i ];
-
-					var vertexA = geometry.vertices[ face.a ].clone();
-					var vertexB = geometry.vertices[ face.b ].clone();
-					var vertexC = geometry.vertices[ face.c ].clone();
-
-					var geometry2 = new THREE.Geometry();
-					geometry2.vertices.push( vertexA, vertexB, vertexC );
-					geometry2.faces.push( new THREE.Face3( 0, 1, 2 ) );
-
-					var mesh = new THREE.Mesh( geometry2, material );
-					mesh.position.sub( geometry2.center() );
-					group.add( mesh );
-
-				}
-
-				return group;
-
-			}
-
-
 			// Create introduction components
 			
 			var geometry = new THREE.IcosahedronGeometry( 20, 1 );
@@ -250,38 +224,203 @@
 
 			// Make labels
 
-			// function makeCurvedLabel(text, opts) {
-			// 	var label = new VRUIKit.TextLabel(text, opts);
+			// function makeCurvedLabel( text, opts ) {
+			// 	var label = new VRUIKit.TextLabel( text, opts );
 			// 	var shapeMesh = VRUIKit.makeCurvedPlane( opts.width, opts.height, opts.radius, 0xffffff);
 			// 	shapeMesh.material.map = label.mesh.material.map; // map label texture to shape
 			// 	label.mesh = shapeMesh; // reassign label mesh
 			// 	return label;
 			// }
 
-			// var shapeMesh = VRUIKit.makeCurvedPlane( 1, 0.4, 0.6, 0xff0000);
-			// shapeMesh.position.z = -2;
-			// console.log(shapeMesh);
-			// dolly.add(shapeMesh);
-
-			// var label = new VRUIKit.TextLabel('text', {
-			// 	width: 1, height: 0.4,
-			// 	background: 'red'
-			// });
-
-			// label.mesh.position.z = -1;
-			// camera.add(label.mesh)
-
-			// var title = makeCurvedLabel('WELCOME TO THE VR WEB', {
+			// var title = makeCurvedLabel('WHEREVER YOU GO\nTHERE YOU ARE', {
 			// 	width: 1, height: 0.5, radius: 0.8,
-			// 	background: 'white',
-			// 	color: 'red'
+			// 	background: 'rgba(255,255,255,0)',
+			// 	color: 'white'
 			// })
 
-			// camera.add( title.mesh );
+			// dolly.add( title.mesh );
+			// console.log( title )
 
-			// title.mesh.position.set( 0, 0, -2 );
+			var w = 8,
+					h = 0.5;
 
-			// Load scene
+			var curvedPlane = new VRUIKit.makeCurvedPlane( w, h, 3, 0xdc72aa );
+
+			var text = new VRUIKit.TextLabel( "WELCOME TO THE VR WEB",
+			{
+				width: w,
+				height: h,
+				font: 'normal 80px montserrat',
+				textAlign: 'left',
+				verticalAlign: 'middle',
+				color: 'white',
+				background: 'rgba( 255,255,255,0.5 )'
+			})
+
+			//create materials
+			// var text_material = new THREE.MeshBasicMaterial( { side: THREE.DoubleSide, transparent: true, opacity: 1, map: text.mesh.material.map } );		
+			var text_material = text.mesh.material;
+			var base_material = new THREE.MeshBasicMaterial( { side: THREE.DoubleSide, transparent: true, opacity: 0.2, color: 0x333333 } );
+			materials = [ text_material ];
+
+			//create mesh
+			var mesh = THREE.SceneUtils.createMultiMaterialObject( curvedPlane.geometry, materials );
+			// mesh.position.set( 0, 0, -1 )
+			// dolly.add( mesh );
+
+
+			// Make test border
+
+			var border = VRUIKit.makeBorder(3, 1.5, 0.01, 225, 90, 0, 0xFFFFFF, 1);
+			// dolly.add( border );
+
+
+
+
+
+
+
+
+
+
+			/* ============== Load sketch2three elements ==============*/
+
+		  function animateStuff(){ //gets called at end of loadSketch
+
+		    for( i = 0; i < elements.length; i++ ){
+		      
+		      element = elements[i];
+
+		      //if( element.name.indexOf("fav") !== -1 ) { //find all elements with "fav" in the name
+		        
+		        element.position.setY( element.position.y + 1 );
+		        var tween = new TWEEN.Tween( element.position )
+		          .to( { y:"-1" }, 2500 )
+		          .easing(TWEEN.Easing.Cubic.Out)
+		          .delay( i*25 )
+		          .start();
+		      //}
+		    }
+
+		  }
+
+
+			
+			function bend( group, amount, multiMaterialObject ) {
+		    function bendVertices( mesh, amount, parent ) {
+		      var geometry = mesh.geometry;
+		      
+		      if (!mesh.userData.geometry) {
+		        mesh.userData.geometry = geometry.clone();
+		      } else {
+		        mesh.geometry = mesh.userData.geometry.clone();
+		        mesh.geometry.verticesNeedUpdate = true;
+		      }
+
+		      var vertices = mesh.geometry.vertices;
+
+		      if (!parent) {
+		        parent = mesh;
+		      }
+
+		      for (var i = 0; i < vertices.length; i++) {
+		        var vertex = vertices[i];
+
+		        // apply bend calculations on vertexes from world coordinates
+		        parent.updateMatrixWorld();
+
+		        var worldVertex = parent.localToWorld(vertex);
+
+		        var worldX = Math.sin( worldVertex.x / amount) * amount;
+		        var worldZ = - Math.cos( worldVertex.x / amount ) * amount;
+		        var worldY = worldVertex.y;
+
+		        // convert world coordinates back into local object coordinates.
+		        var localVertex = parent.worldToLocal(new THREE.Vector3(worldX, worldY, worldZ));
+		        vertex.x = localVertex.x;
+		        vertex.z = localVertex.z;
+		        vertex.y = localVertex.y;
+		      };
+
+		      mesh.geometry.computeBoundingSphere();
+		      mesh.geometry.verticesNeedUpdate = true;
+		    }
+
+		    for ( var i = 0; i < group.children.length; i ++ ) {
+		      var element = group.children[ i ];
+
+		      if (element.geometry.vertices) {
+		        if (multiMaterialObject) {
+		          bendVertices( element, amount, group);
+		        } else {
+		          bendVertices( element, amount);
+		        }
+		      }
+		    }
+
+		    if (group.children.length == 0) {
+		      bendVertices(group, amount);
+		    }
+		  };
+
+
+
+		  var opts = {
+				pixelScale: 0.0035,
+				artboardWidth: 3600,
+				artboardHeight: 900,
+				exclude: [],
+				depth: 2
+			}
+
+			var s23 = Sketch2three.load('images/s23/index.json', opts)
+				.then(function(meshes) {
+
+					var xOffset = -(opts.artboardWidth / 2 * opts.pixelScale);
+					var yOffset = (opts.artboardHeight / 2 * opts.pixelScale);
+
+					var group = new THREE.Group();
+					
+					meshes.forEach(function(mesh) {
+						//self.layout.add(mesh);
+						mesh.position.x += xOffset;
+						mesh.position.y += yOffset;
+						
+						group.add( mesh );
+
+					});
+
+					scene.add(group);
+					bend( group, opts.depth );
+					group.scale.set( 10, 10, 10 );
+					group.position.set( -170, 0, -7420 );
+
+
+					function getMeshes(meshes, search) {
+			      return meshes.filter(function(mesh) {
+			        return mesh.name.indexOf(search) > -1
+			      });
+			    }
+
+					var m = getMeshes(meshes, 'darken');
+					m[0].scale.x *= 1.1;
+					m[0].scale.y *= 1.1;
+					m[0].scale.z *= 1.1;
+					m[0].material.visible = false;
+
+
+					// m[0].scale.set( 1, 0.2, 1 );
+					
+					console.log(m[0]);
+				});
+
+			
+
+
+
+
+
+			/* ============== Load scene ==============*/
 
 			var loadScene = new THREE.ObjectLoader();
 			loadScene.load( 'models/scene-nov4.json', function ( object ) {
@@ -387,6 +526,34 @@
 			//document.body.addEventListener('click', togglePlay);
 		}
 
+		// Explode objects function
+
+		function explode( geometry, material ) {
+
+			var group = new THREE.Group();
+
+			for ( var i = 0; i < geometry.faces.length; i ++ ) {
+
+				var face = geometry.faces[ i ];
+
+				var vertexA = geometry.vertices[ face.a ].clone();
+				var vertexB = geometry.vertices[ face.b ].clone();
+				var vertexC = geometry.vertices[ face.c ].clone();
+
+				var geometry2 = new THREE.Geometry();
+				geometry2.vertices.push( vertexA, vertexB, vertexC );
+				geometry2.faces.push( new THREE.Face3( 0, 1, 2 ) );
+
+				var mesh = new THREE.Mesh( geometry2, material );
+				mesh.position.sub( geometry2.center() );
+				group.add( mesh );
+
+			}
+
+			return group;
+
+		}
+
 		var playing = true;
 
 		function togglePlay() {
@@ -409,7 +576,7 @@
 		};
 
 
-		var currentTime = 28000,
+		var currentTime = 68000,
 			startTime = null;
 			gotime = null;
 
