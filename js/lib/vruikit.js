@@ -191,6 +191,7 @@ VRUIKit.makeFrame = function( width, height, depth, renderWidth, renderHeight, r
 }
 
 VRUIKit.makeCurvedPlane = function( width, height, radius, color ) {
+  
   var C = 2 * Math.PI * radius;
   var thetaLength = (Math.PI*2) * (width/C);
 
@@ -198,14 +199,15 @@ VRUIKit.makeCurvedPlane = function( width, height, radius, color ) {
     radius, // radius top
     radius, // radius bottom
     height, // height
-    10, // y segments
-    10, // x segments
+    20, // y segments
+    20, // x segments
     true, // openended
     0,  // theta start
     thetaLength
   );
 
-  g.applyMatrix( new THREE.Matrix4().makeScale(1, 1, -1));
+  g.applyMatrix( new THREE.Matrix4().makeScale(1, 1, -1)); //flip vertices so the normals face inwards (TODO: make this optional)
+  g.applyMatrix( new THREE.Matrix4().makeTranslation( 0, 0-height/2, 0 ) ); //shift vertices downwards so mesh pivot point is it's top edge (TODO: make this optional)
 
   var m = new THREE.MeshBasicMaterial( {
     color: color,
