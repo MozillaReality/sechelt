@@ -86,7 +86,7 @@ THREE.VREffect = function ( renderer, done ) {
 		var rendererHeight = renderer.domElement.clientHeight;
 		var eyeDivisionLine = rendererWidth / 2;
 
-		renderer.enableScissorTest( true );
+		//renderer.enableScissorTest( true );
 		renderer.clear();
 
 		if ( camera.parent === undefined ) {

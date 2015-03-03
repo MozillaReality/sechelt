@@ -57,13 +57,16 @@
 			scene = new THREE.Scene();
 			scene.fog = new THREE.Fog( 0xcacfde, 0, 10000 );
 
+
+			camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 20000 );
+			camera.position.z = 0.0001;
+
+
 			dolly = new THREE.Group();
 			dolly.position.set( 10000, 10000, 10000 );
 
 			scene.add( dolly );
 
-			camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 20000 );
-			camera.position.z = 0.0001;
 			dolly.add( camera );
 
 			// Effect and Controls for VR
@@ -231,7 +234,7 @@
 		  var top = new THREE.Mesh( geometry, material );
 		  var bottom = new THREE.Mesh( geometry, material );
 		  bottom.rotation.set(0, 0, 1 * Math.PI)
-		  
+
 		  introContainer.add( top );
 			introContainer.add( bottom );
 
@@ -303,7 +306,7 @@
 			})
 
 			//create materials
-			var welcome_label_mat = new THREE.MeshBasicMaterial( { side: THREE.DoubleSide, transparent: true, opacity: 1, map: welcome_label.mesh.material.map } );		
+			var welcome_label_mat = new THREE.MeshBasicMaterial( { side: THREE.DoubleSide, transparent: true, opacity: 1, map: welcome_label.mesh.material.map } );
 			var welcome_plane_mat = new THREE.MeshBasicMaterial( { side: THREE.DoubleSide, transparent: false, opacity: 1, color: 0xCD3695 } );
 			welcome_materials = [ welcome_label_mat, welcome_plane_mat ];
 
@@ -312,13 +315,19 @@
 			// welcome.position.set( 0, 0, -1 )
 			introContainer.add( welcome );
 
-			dolly.add(introContainer)
-			
+			//dolly.add(camera)
+
+			var geometry = new THREE.BoxGeometry( 3,3, 3 );
+			var material = new THREE.MeshBasicMaterial( {color: 0x00ff00, wireframe: true} );
+			var cube = new THREE.Mesh( geometry, material );
+			cube.position.z = -10;
+
+			dolly.add( introContainer );
 
 			// Make border
 
 			var border = VRUIKit.makeBorder(3, 1.5, 0.01, 225, 90, 0, 0xFFFFFF, 1);
-			// dolly.add( border );
+			//dolly.add( border );
 
 
 			// Animate introduction
@@ -387,11 +396,11 @@
 		  function animateStuff(){ //gets called at end of loadSketch
 
 		    for( i = 0; i < elements.length; i++ ){
-		      
+
 		      element = elements[i];
 
 		      //if( element.name.indexOf("fav") !== -1 ) { //find all elements with "fav" in the name
-		        
+
 		        element.position.setY( element.position.y + 1 );
 		        var tween = new TWEEN.Tween( element.position )
 		          .to( { y:"-1" }, 2500 )
@@ -406,7 +415,7 @@
 			function bend( group, amount, multiMaterialObject ) {
 		    function bendVertices( mesh, amount, parent ) {
 		      var geometry = mesh.geometry;
-		      
+
 		      if (!mesh.userData.geometry) {
 		        mesh.userData.geometry = geometry.clone();
 		      } else {
@@ -475,12 +484,12 @@
 					var yOffset = (opts.artboardHeight / 2 * opts.pixelScale);
 
 					var group = new THREE.Group();
-					
+
 					meshes.forEach(function(mesh) {
 						//self.layout.add(mesh);
 						mesh.position.x += xOffset;
 						mesh.position.y += yOffset;
-						
+
 						group.add( mesh );
 
 					});
@@ -505,7 +514,7 @@
 
 
 					// m[0].scale.set( 1, 0.2, 1 );
-					
+
 					console.log(m[0]);
 				});
 
@@ -594,29 +603,29 @@
 
 					cameraPath = curve.toLinearCurve( 1 ); // 1 = distance between points
 
-					/*
+
 					// debug points
 
-					var geometry = new THREE.Geometry();
-					geometry.vertices = cameraPath.getPoints();
-					var material = new THREE.PointCloudMaterial( { size: 0.1 } );
+					// var geometry = new THREE.Geometry();
+					// geometry.vertices = cameraPath.getPoints();
+					// var material = new THREE.PointCloudMaterial( { size: 0.1 } );
 
-					var points = new THREE.PointCloud( geometry, material );
-					points.position.y = -1;
-					points.scale.z = -1;
-					scene.add( points );
+					// var points = new THREE.PointCloud( geometry, material );
+					// points.position.y = -1;
+					// points.scale.z = -1;
+					// scene.add( points );
 
-					// debug line
+					// // debug line
 
-					var geometry = new THREE.Geometry();
-					geometry.vertices = cameraPath.getPoints();
-					var material = new THREE.LineBasicMaterial();
+					// var geometry = new THREE.Geometry();
+					// geometry.vertices = cameraPath.getPoints();
+					// var material = new THREE.LineBasicMaterial();
 
-					var line = new THREE.Line( geometry, material );
-					line.position.y = -1;
-					line.scale.z = -1;
-					scene.add( line );
-					*/
+					// var line = new THREE.Line( geometry, material );
+					// line.position.y = -1;
+					// line.scale.z = -1;
+					// scene.add( line );
+
 
 					requestAnimationFrame( animate );
 
@@ -686,14 +695,13 @@
 
 
 		function animate( time ) {
-
 			requestAnimationFrame( animate );
+
 			TWEEN.update();
 
 			if ( cameraPath !== undefined ) {
 				if (!startTime) startTime = time;
 				if (!currentTime) currentTime = time;
-
 				if (playing) currentTime += speed;
 
 				gotime = TWEEN.Easing.Sinusoidal.InOut( Math.min( currentTime / 70000, 1 ) ) * 0.9999;
@@ -707,24 +715,27 @@
 				dolly.position.copy( pointA );
 				dolly.lookAt( pointB );
 				dolly.rotateY( Math.PI ); // look forward
+				dolly.updateMatrixWorld();
 			}
 
 			if (controls) {
 				controls.update();
 			}
 
-			introContainer.position.copy( camera.position );
+
 
 			sky.position.copy( dolly.position );
 
-			water.position.x = dolly.position.x;
-			water.position.z = dolly.position.z;
+			// water.position.x = dolly.position.x;
+			// water.position.z = dolly.position.z;
 
-      if (manager.isVRMode()) {
+      //if (manager.isVRMode()) {
         effect.render( scene, camera );
-      } else {
-        renderer.render( scene, camera );
-      }
+      // } else {
+        // renderer.render( scene, camera );
+      // }
+
+
 
 		}
 
