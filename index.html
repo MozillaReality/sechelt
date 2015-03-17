@@ -5,6 +5,7 @@
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<meta content="Josh Carpenter%0DMr.doob%0D—%0Dthree.js, Cinema 4D" name="description">
+		<link rel="stylesheet" href="fonts/montserrat/montserrat.css">
 		<style>
 			html, body {
 				background-color: #000;
@@ -13,9 +14,14 @@
 				overflow: hidden;
 			}
 		</style>
+
 	</head>
 
 	<body>
+		<script src="js/utils.js"></script>
+		<script src="js/vruikit.js"></script>
+		<script type="text/javascript" src="/socket.io/socket.io.js"></script>
+    <script type="text/javascript" src="js/socket.io-stream.js"></script>
 		<script src="js/three.min.js"></script>
 		<script src="js/tween.min.js"></script>
 		<script src="js/VRControls.js"></script>
@@ -23,9 +29,11 @@
 		<script src="js/C4DCurveLoader.js"></script>
 		<script src="js/webvr-polyfill.js"></script>
 		<script src="js/webvr-manager.js"></script>
-		<script src="js/lib/utils.js"></script>
-		<script src="js/lib/vruikit.js"></script>
 		<script src="js/sketch2three.js"></script>
+		<script src="js/evt.js"></script>
+		<script src="js/gamepadmapping.js"></script>
+  	<script src="js/xboxpad.js"></script>
+		<script src="js/vrclient.js"></script>
 		<script>
 
 		var parameters = ( function () {
@@ -38,16 +46,15 @@
 			return parameters;
 		} )();
 
+
 		var camera, scene, renderer;
 		var controls, effect;
 		var controls2, clock = new THREE.Clock();
 		var sky, water;
 		var cameraPath;
 		var dolly;
-    var manager;
 
 		function init() {
-
 			renderer = new THREE.WebGLRenderer( { antialias: true } );
 			renderer.autoClear = false;
 			renderer.setClearColor( 0x404040 );
@@ -69,13 +76,28 @@
 
 			dolly.add( camera );
 
-			// Effect and Controls for VR
-			effect = new THREE.VREffect( renderer );
-			controls = new THREE.VRControls( camera );
-
       onWindowResize();
 
-      manager = new WebVRManager(effect); // Initialize the WebVR manager.
+      function setRenderMode(mode) {
+				var modes = VRClient.renderModes;
+				if (mode == modes.mono) {
+					controls = new THREE.VRControls( camera );
+					effect = renderer;
+				} else if (mode == modes.stereo) {
+					controls = null;
+					effect = new THREE.StereoEffect( renderer );
+
+				} else if (mode == modes.vr) {
+					controls = new THREE.VRControls( camera );
+					effect = new THREE.VREffect( renderer );
+				}
+
+				effect.setSize( window.innerWidth, window.innerHeight );
+			}
+
+			setRenderMode(VRClient.renderModes.mono);
+
+      VRClient.onRenderModeChange = setRenderMode;
 
 
 			// Create skybox
@@ -171,25 +193,6 @@
 			scene.add( mesh );
 
 
-			// Water texture
-
-			// Causes massive jank and out-of-memory errors, so I abandoned this approach for time being...
-			/*
-			var texture = THREE.ImageUtils.loadTexture( 'images/waves-2.png' );
-			texture.wrapS = THREE.RepeatWrapping;
-			texture.wrapT = THREE.RepeatWrapping;
-			texture.repeat.set( 40, 40 );
-			var geometry = new THREE.PlaneGeometry( 10000, 10000, 1000, 1000 );
-			var material = new THREE.MeshBasicMaterial( {
-				//color: 0xffffff,
-				map: texture
-			} );
-			water2 = new THREE.Mesh( geometry, material );
-			water2.position.y = 3;
-			water2.rotation.x = - Math.PI / 2;
-			scene.add( water2 );
-			*/
-
 
 			// Create water
 
@@ -229,6 +232,9 @@
 			window.introContainer = new THREE.Group();
 			// Make background element
 
+			//create alphas
+			var texLoader = new THREE.TextureLoader();
+
 			var geometry = new THREE.SphereGeometry( 10, 20, 20, 0, 360 * Math.PI/180, 0, 90 * Math.PI/180 );
 		  var material = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, color: 0x26324F });
 		  var top = new THREE.Mesh( geometry, material );
@@ -239,7 +245,7 @@
 			introContainer.add( bottom );
 
 
-			// Make "Built with webgl"
+			// Make "Built with WebGL"
 
 			var w = 2,
 				h = 0.4;
@@ -259,32 +265,16 @@
 				// background: 'rgba( 205, 54, 149,1 )'
 			})
 
-			// var builtwith_mat = new THREE.MeshBasicMaterial( { side: THREE.FrontSide, transparent: true, opacity: 1, map: welcome_label.mesh.material.map } );
 			builtwith.material.transparent = true;
-			builtwith.material.opacity = 1;
-			builtwith.material.map = builtwith_label.mesh.material.map;
-			builtwith.position.set( 0, 0.45, 0 )
+			builtwith.material.alphaTest = 0.2;
+			builtwith.material.map = builtwith_label.mesh.material.map; // apply label to builtwith mesh
+			builtwith.position.set( 0, -0.1, 0 )
+			builtwith.rotation.set( 0, Utils.toRad(10), 0 );
+			builtwith.visible = false;
 
 			introContainer.add( builtwith );
 
 
-			// new THREE.TextureLoader().load(
-		 //    "images/alpha-2pxblack-leftright.png",
-		 //    function( tex )
-		 //    {
-		 //      tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
-		 //      tex.repeat.set( 1, 1 );
-		 //      tex.offset.set( -1, 0 );
-		 //      tex.magFilter = tex.minFilter = THREE.NearestFilter;
-		 //      mesh.material.alphaMap = tex;
-		 //      mesh.material.needsUpdate = true;
-
-		 //    // 	new TWEEN.Tween( tex.offset )
-			// 			// .to( { x: 0 }, 1000 )
-			// 			// .easing( TWEEN.Easing.Sinusoidal.Out )
-			// 			// .start();
-
-		 //    } );
 
 
 			// Make "Welcome to the vr web"
@@ -299,231 +289,395 @@
 				height: h,
 				font: 'normal 80px montserrat',
 				textAlign: 'left',
-				verticalAlign: 'middle',
 				color: 'white',
-				fontPosition: { x: 40, y: 0 }
-				// background: 'rgba( 205, 54, 149,1 )'
+				fontPosition: { x: 40, y: 100 }
 			})
 
-			//create materials
+			// create materials
+			var welcome_plane_mat = new THREE.MeshBasicMaterial( { side: THREE.DoubleSide, transparent: true, opacity: 1, color: 0xCD3695 } );
 			var welcome_label_mat = new THREE.MeshBasicMaterial( { side: THREE.DoubleSide, transparent: true, opacity: 1, map: welcome_label.mesh.material.map } );
-			var welcome_plane_mat = new THREE.MeshBasicMaterial( { side: THREE.DoubleSide, transparent: false, opacity: 1, color: 0xCD3695 } );
-			welcome_materials = [ welcome_label_mat, welcome_plane_mat ];
+			welcome_materials = [ welcome_plane_mat, welcome_label_mat ];
+
+			// load alpha map and apply to welcome_plane
+			texLoader.load(
+		    "images/alpha-2pxblack-leftright.png",
+		    function( tex )
+		    {
+		      tex.magFilter = tex.minFilter = THREE.NearestFilter;
+		      welcome_plane_mat.alphaMap = tex;
+		      welcome_plane_mat.needsUpdate = true;
+		    } );
 
 			//create mesh
 			var welcome = THREE.SceneUtils.createMultiMaterialObject( welcome_plane.geometry, welcome_materials );
-			// welcome.position.set( 0, 0, -1 )
+			welcome.visible = false;
+			welcome.position.set( 0, -0.5, 0 );
+			welcome.rotation.set( 0, Utils.toRad(10), 0 );
+
 			introContainer.add( welcome );
 
-			//dolly.add(camera)
 
-			var geometry = new THREE.BoxGeometry( 3,3, 3 );
-			var material = new THREE.MeshBasicMaterial( {color: 0x00ff00, wireframe: true} );
-			var cube = new THREE.Mesh( geometry, material );
-			cube.position.z = -10;
 
-			dolly.add( introContainer );
 
 			// Make border
 
-			var border = VRUIKit.makeBorder(3, 1.5, 0.01, 225, 90, 0, 0xFFFFFF, 1);
-			//dolly.add( border );
+			var outline = new VRUIKit.makeBorder( 5.1, 3.3, 0.3, 225, 90, 0, 0xFFFFFF, 1 );
+			// introContainer.add( border );
+
+
+
+			// Make www
+
+			var w = 0.6,
+				h = 0.25;
+
+			var www_white = new VRUIKit.TextLabel( "WWW",
+			{
+				width: w,
+				height: h,
+				font: 'bold 180px montserrat',
+				textAlign: 'center',
+				verticalAlign: 'middle',
+				color: 'rgba( 255, 255, 255, 1 )',
+			})
+			www_white.mesh.visible = false;
+			www_white.mesh.translateZ( 0.02 );
+			www_white.mesh.visible = false;
+			introContainer.add( www_white.mesh );
+
+
+			var www_blue = new VRUIKit.TextLabel( "WWW",
+			{
+				width: w,
+				height: h,
+				font: 'bold 180px montserrat',
+				textAlign: 'center',
+				verticalAlign: 'middle',
+				color: 'rgba( 128, 207, 255, 1 )',
+				// background: 'rgba(0,0,0,1)'
+			})
+			www_blue.mesh.material.opacity = 0.6;
+			www_blue.mesh.translateZ( 0.01 );
+			www_blue.mesh.visible = false;
+			introContainer.add( www_blue.mesh );
+
+			var www_red = new VRUIKit.TextLabel( "WWW",
+			{
+				width: w,
+				height: h,
+				font: 'bold 180px montserrat',
+				textAlign: 'center',
+				verticalAlign: 'middle',
+				color: 'rgba( 255, 39, 66, 1 )',
+			})
+			www_red.mesh.material.opacity = 0.5;
+			www_red.mesh.visible = false;
+			introContainer.add( www_red.mesh );
+
+			var www = new THREE.Object3D();
+			www.add( www_white.mesh );
+			www.add( www_blue.mesh );
+			www.add( www_red.mesh );
+			www.position.set( 0, -0.25, -1.1 )
+			introContainer.add( www );
+
+			// Make world person animation
+
+
+
+
+			// Make floating frames
+
+			var frames = new THREE.Object3D();
+			introContainer.add( frames );
+
+			for( var i = 0; i < 40; i++ ){
+
+				var posX = Utils.getRandomInt( -3, 3 );
+				var posY = Utils.getRandomInt( -3, 3 );
+				var posZ = Utils.getRandomInt( -8, 0 );
+
+				var w = Utils.getRandomInt( 0.5, 2 );
+				var h = Utils.getRandomInt( 0.5, 2 );
+				var d = Utils.getRandomInt( 0.5, 2 );
+
+				var frame = new VRUIKit.makeFrame( w, h, d, true, true, true, 0.003, 0x12B9D7, 1 );
+				Utils.shuffleArray( frame.children );
+				frame.position.set( posX, posY, posZ );
+
+				for( var e = 0; e < frame.children.length; e++ ) {
+
+					var edge = frame.children[e];
+					edge.visible = false;
+
+				}
+
+				frames.add(frame);
+
+			}
+
+
+
+			// Make high frames
+
+			var highlight_frame = new VRUIKit.makeFrame( 1.25, 1.25, 1.25, true, true, true, 0.01, 0xFFFFFF, 1 );
+			Utils.shuffleArray( frame.children );
+			highlight_frame.position.set( 0, 0, -5 );
+			introContainer.add( highlight_frame );
+
+			for( var e = 0;	 e < highlight_frame.children.length; e++ ) {
+
+				var edge = highlight_frame.children[e];
+				edge.visible = false;
+
+			}
+
+
+
+			// Add introContainer to the dolly (which the camera is also a parented to)
+
+			dolly.add( introContainer );
+
 
 
 			// Animate introduction
 
-			function animateIntro(){
-
-				// welcome.children[1].scale.set( 1, 0, 1 );
-				// new TWEEN.Tween( welcome.children[1].scale )
-				// 	.to( { y: 1 }, 1500 )
-				// 	.easing( TWEEN.Easing.Quintic.Out )
-				// 	.delay( 1000 )
-				// 	.start();
-
-				new TWEEN.Tween( top.rotation )
-					.to( { x: 1.57 }, 3000 )
-					.delay( 2000 )
-					.easing(TWEEN.Easing.Quintic.In)
-					.start();
-
-				new TWEEN.Tween( top.scale )
-					.to( { x: 0.005, y: 0.005, z: 0.005 }, 3000 )
-					.delay( 2000 )
-					.easing(TWEEN.Easing.Quintic.In)
-					.start();
-
-				new TWEEN.Tween( top.position )
-					.to( { z: 2 }, 6000 )
-					.delay( 2000 )
-					.easing(TWEEN.Easing.Quintic.In)
-					.onComplete( function(){ introContainer.remove( top ) } )
-					.start();
+			window.animateIntro = function(){
 
 
-				new TWEEN.Tween( bottom.rotation )
-					.to( { x: -1.57 }, 3000 )
-					.delay( 2000 )
-					.easing(TWEEN.Easing.Quintic.In)
-					.start();
-
-				new TWEEN.Tween( bottom.scale )
-					.to( { x: 0.005, y: 0.005, z: 0.005 }, 3000 )
-					.delay( 2000 )
-					.easing(TWEEN.Easing.Quintic.In)
-					.start();
-
-				new TWEEN.Tween( bottom.position )
-					.to( { z: 2 }, 3000 )
-					.delay( 2000 )
-					.easing(TWEEN.Easing.Quintic.In)
-					.onComplete( function(){ introContainer.remove( bottom ) } )
-					.start();
+				// Reveal person
+				// Reveal taglines
+				// Reveal frames
+				// Hold....
+				// Close frames
+				// Open the eyelids
+				// Hold...
+				// Close taglines
 
 
-				// console.log( welcome.children[0] );
+				// reveal www
 
-			}
+				var revealwww = function() {
 
+					// reveal the WWW, and then hide it
+					// set the Y offset of www_white.mesh.material.map to 1
+					// animate it to 0
 
+					www_white.mesh.visible = true;
+					www_white.mesh.material.map.offset.set( 0, 1 );
 
+					new TWEEN.Tween( www_white.mesh.material.map.offset )
+						.to( { y: 0 }, 1000 )
+						.easing( TWEEN.Easing.Cubic.Out )
+						.onComplete( function(){
 
+							new TWEEN.Tween( www_white.mesh.material ) // fade out white text
+								.to( { opacity: 0 }, 2000 )
+								.delay( 0 )
+								.easing( TWEEN.Easing.Cubic.In )
+								.start()
 
+							www_blue.mesh.visible = true;
 
-			/* ============== Load sketch2three elements ==============*/
+							new TWEEN.Tween( www_blue.mesh.position ) // reveal color text
+								.to( { x: 0.009, y: 0.009 }, 4000 )
+								.delay( 0 )
+								.easing( TWEEN.Easing.Quartic.InOut )
+								.start()
 
-			/*
-		  function animateStuff(){ //gets called at end of loadSketch
+							new TWEEN.Tween( www_blue.mesh.material )
+								.to( { opacity: 0 }, 2000 )
+								.delay( 3000 )
+								.easing( TWEEN.Easing.Quartic.InOut )
+								.onComplete( function(){
+									introContainer.remove( www );
+								})
+								.start()
 
-		    for( i = 0; i < elements.length; i++ ){
+							www_red.mesh.visible = true;
 
-		      element = elements[i];
+							new TWEEN.Tween( www_red.mesh.position )
+								.to( { x: -0.009, y: -0.009 }, 4000 )
+								.delay( 0 )
+								.easing( TWEEN.Easing.Quartic.InOut )
+								.start()
 
-		      //if( element.name.indexOf("fav") !== -1 ) { //find all elements with "fav" in the name
+							new TWEEN.Tween( www_red.mesh.material )
+								.to( { opacity: 0 }, 2000 )
+								.delay( 3000 )
+								.easing( TWEEN.Easing.Quartic.InOut )
+								.start()
 
-		        element.position.setY( element.position.y + 1 );
-		        var tween = new TWEEN.Tween( element.position )
-		          .to( { y:"-1" }, 2500 )
-		          .easing(TWEEN.Easing.Cubic.Out)
-		          .delay( i*25 )
-		          .start();
-		      //}
-		    }
-
-		  }
-
-			function bend( group, amount, multiMaterialObject ) {
-		    function bendVertices( mesh, amount, parent ) {
-		      var geometry = mesh.geometry;
-
-		      if (!mesh.userData.geometry) {
-		        mesh.userData.geometry = geometry.clone();
-		      } else {
-		        mesh.geometry = mesh.userData.geometry.clone();
-		        mesh.geometry.verticesNeedUpdate = true;
-		      }
-
-		      var vertices = mesh.geometry.vertices;
-
-		      if (!parent) {
-		        parent = mesh;
-		      }
-
-		      for (var i = 0; i < vertices.length; i++) {
-		        var vertex = vertices[i];
-
-		        // apply bend calculations on vertexes from world coordinates
-		        parent.updateMatrixWorld();
-
-		        var worldVertex = parent.localToWorld(vertex);
-
-		        var worldX = Math.sin( worldVertex.x / amount) * amount;
-		        var worldZ = - Math.cos( worldVertex.x / amount ) * amount;
-		        var worldY = worldVertex.y;
-
-		        // convert world coordinates back into local object coordinates.
-		        var localVertex = parent.worldToLocal(new THREE.Vector3(worldX, worldY, worldZ));
-		        vertex.x = localVertex.x;
-		        vertex.z = localVertex.z;
-		        vertex.y = localVertex.y;
-		      };
-
-		      mesh.geometry.computeBoundingSphere();
-		      mesh.geometry.verticesNeedUpdate = true;
-		    }
-
-		    for ( var i = 0; i < group.children.length; i ++ ) {
-		      var element = group.children[ i ];
-
-		      if (element.geometry.vertices) {
-		        if (multiMaterialObject) {
-		          bendVertices( element, amount, group);
-		        } else {
-		          bendVertices( element, amount);
-		        }
-		      }
-		    }
-
-		    if (group.children.length == 0) {
-		      bendVertices(group, amount);
-		    }
-		  };
-
-		  var opts = {
-				pixelScale: 0.0035,
-				artboardWidth: 3600,
-				artboardHeight: 900,
-				exclude: [],
-				depth: 2
-			}
-
-			var s23 = Sketch2three.load('images/s23/index.json', opts)
-				.then(function(meshes) {
-
-					var xOffset = -(opts.artboardWidth / 2 * opts.pixelScale);
-					var yOffset = (opts.artboardHeight / 2 * opts.pixelScale);
-
-					var group = new THREE.Group();
-
-					meshes.forEach(function(mesh) {
-						//self.layout.add(mesh);
-						mesh.position.x += xOffset;
-						mesh.position.y += yOffset;
-
-						group.add( mesh );
-
-					});
-
-					scene.add(group);
-					bend( group, opts.depth );
-					group.scale.set( 10, 10, 10 );
-					group.position.set( -170, 0, -7420 );
+						})
+						.start()
 
 
-					function getMeshes(meshes, search) {
-			      return meshes.filter(function(mesh) {
-			        return mesh.name.indexOf(search) > -1
-			      });
-			    }
-
-					var m = getMeshes(meshes, 'darken');
-					m[0].scale.x *= 1.1;
-					m[0].scale.y *= 1.1;
-					m[0].scale.z *= 1.1;
-					m[0].material.visible = false;
+				}
 
 
-					// m[0].scale.set( 1, 0.2, 1 );
+				// reveal frames
 
-					console.log(m[0]);
+				var revealframes = function() {
+
+					for ( var i = 0; i < frames.children.length; i++ ){ // loop through the frames
+
+						var f = frames.children[i];
+
+						for( var e = 0; e < f.children.length; e++ ) { // animate each edge of each frame
+
+							var edge = f.children[e];
+							edge.scale.z = 0.001;
+							edge.visible = true;
+
+							new TWEEN.Tween( edge.scale )
+								.to( { z: 1  }, 4000 )
+								.delay( i * 50 )
+								.easing( TWEEN.Easing.Sinusoidal.Out )
+								.start();
+						}
+
+					}
+
+					new TWEEN.Tween( frames.position ) // tween in the position of each frame
+						.to( { z: "10"  }, 13000 )
+						.onComplete( function(){
+							frames.visible = false;
+						} )
+						.start();
+
+				}
+
+
+				// reveal highlight frame
+
+				var reveal_highlightframe = function(){ // reveal highlight frame
+
+					for ( var h = 0; h < highlight_frame.children.length; h++ ) { // animate in highlight frame
+
+						var edge = highlight_frame.children[h];
+						edge.scale.z = 0.001;
+						edge.visible = true;
+
+						new TWEEN.Tween( edge.scale )
+							.to( { z: 1  }, 4000 )
+							.delay( i * 50 )
+							.easing( TWEEN.Easing.Sinusoidal.Out )
+							.start();
+					}
+
+					new TWEEN.Tween( highlight_frame.position ) // tween in the position of each frame
+						.to( { z: "10"  }, 13000 )
+						.onComplete( function(){
+							highlight_frame.visible = false;
+						} )
+						.start();
+
+
+				}
+
+
+				//open eyelids
+
+				var openeyelids = function() {
+
+					new TWEEN.Tween( top.rotation ) // top eyelid
+						.to( { x: 1.57 }, 6500 )
+						.easing(TWEEN.Easing.Quintic.In)
+						.start();
+
+					new TWEEN.Tween( top.scale )
+						.to( { x: 0.005, y: 0.005, z: 0.005 }, 3000 )
+						.easing(TWEEN.Easing.Quintic.In)
+						.delay( 2000 )
+						.start();
+
+					new TWEEN.Tween( top.position )
+						.to( { z: 2 }, 6000 )
+						.easing(TWEEN.Easing.Quintic.In)
+						.onComplete( function(){ introContainer.remove( top ) } )
+						.start();
+
+					new TWEEN.Tween( bottom.rotation ) // bottom eyelid
+						.to( { x: -1.57 }, 6500 )
+						.easing(TWEEN.Easing.Quintic.In)
+						.start();
+
+					new TWEEN.Tween( bottom.scale )
+						.to( { x: 0.005, y: 0.005, z: 0.005 }, 3000 )
+						.easing(TWEEN.Easing.Quintic.In)
+						.delay( 2000 )
+						.start();
+
+					new TWEEN.Tween( bottom.position )
+						.to( { z: 2 }, 6000 )
+						.easing(TWEEN.Easing.Quintic.In)
+						.onComplete( function(){ introContainer.remove( bottom ) } )
+						.start();
+
+				}
+
+
+				// reveal splash text
+
+				var splashtext = function() {
+
+					builtwith.visible = true;
+					welcome.visible = true;
+
+					builtwith.material.map.offset.set( 1, 0 );
+					welcome_plane_mat.alphaMap.offset.set( 1, 0 );
+					welcome_label_mat.opacity = 0;
+
+					new TWEEN.Tween( builtwith.material.map.offset )
+						.to( { x: 0 }, 800 )
+						.easing(TWEEN.Easing.Quintic.Out)
+						.start();
+
+					new TWEEN.Tween( welcome_plane_mat.alphaMap.offset )
+						.to( { x: 0 }, 800 )
+						.easing(TWEEN.Easing.Quintic.In)
+						.start();
+
+					new TWEEN.Tween( welcome_label_mat )
+						.to( { opacity: 1 }, 800 )
+						.easing(TWEEN.Easing.Quintic.In)
+						.start();
+				}
+
+
+				// define sequence of animation
+
+				var sequence = [{
+					"func": revealwww,
+					"time": 2
+				},
+				{
+					"func": revealframes,
+					"time": 2
+				},
+				{
+					"func": reveal_highlightframe,
+					"time": 7
+				},
+				{
+					"func": openeyelids,
+					"time": 8
+				},
+				{
+					"func": splashtext,
+					"time": 26
+				}];
+
+
+
+				sequence.forEach(function(item) {
+					setTimeout(function() {
+						item.func.call(item.func);
+					}, item.time * 1000);
 				});
 
-			*/
 
-
-
-
-
+			}
 
 
 
@@ -534,7 +688,6 @@
 			var loadScene = new THREE.ObjectLoader();
 			loadScene.load( 'models/scene-nov4.json', function ( object ) {
 
-				window.setTimeout( animateIntro, 2000 );
 
 				var land = object.getObjectByName( 'land' ).children[0];
 				var reflection = new THREE.Mesh( land.geometry, land.material.clone() );
@@ -570,7 +723,8 @@
 
 				// Create sounds
 
-				/*
+
+				window.startSounds = function() {
 					var listener = new THREE.AudioListener();
 					camera.add( listener );
 
@@ -594,7 +748,8 @@
 					sound.setLoop( true );
 					sound.setRefDistance( 100 );
 					scene.add( sound );
-				*/
+				}
+
 
 				// Load camera path
 
@@ -627,52 +782,28 @@
 					// scene.add( line );
 
 
-					requestAnimationFrame( animate );
+					animate();
 
 				} );
 
 			} );
 
 			window.addEventListener( 'resize', onWindowResize, false );
-			//document.body.addEventListener('click', togglePlay);
 		}
 
-		// Explode objects function
 
-		function explode( geometry, material ) {
 
-			var group = new THREE.Group();
 
-			for ( var i = 0; i < geometry.faces.length; i ++ ) {
-
-				var face = geometry.faces[ i ];
-
-				var vertexA = geometry.vertices[ face.a ].clone();
-				var vertexB = geometry.vertices[ face.b ].clone();
-				var vertexC = geometry.vertices[ face.c ].clone();
-
-				var geometry2 = new THREE.Geometry();
-				geometry2.vertices.push( vertexA, vertexB, vertexC );
-				geometry2.faces.push( new THREE.Face3( 0, 1, 2 ) );
-
-				var mesh = new THREE.Mesh( geometry2, material );
-				mesh.position.sub( geometry2.center() );
-				group.add( mesh );
-
-			}
-
-			return group;
-
-		}
-
-		var playing = true;
+		var playing = false;
 
 		function togglePlay() {
-			playing = playing == false?true:false;
+			playing = (playing == false) ? true : false;
 		};
 
 		function play() {
 			playing = true;
+			startSounds();
+			animateIntro();
 		}
 
 		function rewind() {
@@ -683,8 +814,13 @@
 			camera.aspect = window.innerWidth / window.innerHeight;
 			camera.updateProjectionMatrix();
 
-			effect.setSize( window.innerWidth, window.innerHeight );
+			if (effect) {
+				effect.setSize( window.innerWidth, window.innerHeight );
+			}
 		};
+
+
+
 
 
 		var currentTime = 38000,
@@ -693,8 +829,17 @@
 
 		var speed = 20;
 
+		var doneDemo = false;
+
+
+		function onDemoDone() {
+			setTimeout(function() {
+				getTweets();
+			}, 5000)
+		}
 
 		function animate( time ) {
+
 			requestAnimationFrame( animate );
 
 			TWEEN.update();
@@ -704,6 +849,13 @@
 				if (!currentTime) currentTime = time;
 				if (playing) currentTime += speed;
 
+				if (gotime > 0.99) {
+					if (!doneDemo) {
+						onDemoDone();
+						doneDemo = true;
+					}
+				}
+
 				gotime = TWEEN.Easing.Sinusoidal.InOut( Math.min( currentTime / 70000, 1 ) ) * 0.9999;
 
 				var pointA = cameraPath.getPointAt( gotime );
@@ -711,6 +863,8 @@
 
 				pointA.z = -pointA.z;
 				pointB.z = -pointB.z;
+
+				//console.log(pointA, pointB);
 
 				dolly.position.copy( pointA );
 				dolly.lookAt( pointB );
@@ -722,22 +876,133 @@
 				controls.update();
 			}
 
-
+			bubblesGroup.children.forEach(function(bubble) {
+				bubble.userData.speedY = Utils.getRandomArbitrary(0.0001, 0.0005);
+				bubble.userData.speedRot = Utils.getRandomArbitrary(0.0001, 0.0005);
+				bubble.position.y += bubble.userData.speedY;
+				//bubble.rotation.y += bubble.userData.speedRot;
+			})
 
 			sky.position.copy( dolly.position );
 
-			// water.position.x = dolly.position.x;
-			// water.position.z = dolly.position.z;
+			water.position.x = dolly.position.x;
+			water.position.z = dolly.position.z;
 
-      //if (manager.isVRMode()) {
-        effect.render( scene, camera );
-      // } else {
-        // renderer.render( scene, camera );
-      // }
-
-
+      effect.render( scene, camera );
 
 		}
+
+
+
+
+
+
+		// tweets
+
+	  function makeBubble( data ){
+	    var text = data.text;
+
+	    function makeCurvedLabel(text, opts) {
+				var label = new VRUIKit.TextLabel(text, opts);
+				var shapeMesh = VRUIKit.makeCurvedPlane( opts.width, opts.height, opts.radius, 0xffffff);
+				// map label texture to shape
+				shapeMesh.material.map = label.mesh.material.map;
+				// reassign label mesh
+				label.mesh = shapeMesh;
+				return label;
+			}
+
+			var tweetLabel = makeCurvedLabel(text, {
+				width: 0.5, height: 0.1, radius: Utils.getRandomArbitrary(0.5, 1.5),
+				color: 'white',
+				fontPosition: { x: 10, y: 0 },
+				font: 'normal 24px montserrat',
+				wrapText: true,
+				verticalAlign: 'middle',
+				lineHeight: 24,
+				verticalAlign: 'top'
+			})
+			var mesh = tweetLabel.mesh;
+			mesh.material.alphaTest=0.2;
+			mesh.material.transparent = true;
+
+
+	    //randomize holder rotation and height
+	    var yRot = Utils.getRandomArbitrary( -120, 120 )
+	    mesh.rotation.set( 0, yRot * Math.PI/180, 0 )
+	    var yPos = Utils.getRandomArbitrary( 0, 0.5 );
+	    mesh.position.set( 0, yPos, 0 )
+
+	    // return mesh;
+	    bubblesGroup.add( mesh );
+	    bubblesGroup.scale.set(2,2,2);
+	    bubbleAnimateIn( mesh );
+	  }
+
+	  function bubbleAnimateIn( mesh ){
+	    var setY = mesh.position.y - 0.05;
+	    new TWEEN.Tween( mesh.position )
+	      .to( { y: setY }, 1000 )
+	      .easing( TWEEN.Easing.Quadratic.Out )
+	      .start();
+
+	    // mesh.scale.set( 0.5, 0.5, 0.5 );
+	    // new TWEEN.Tween( mesh.scale )
+	    //   .to( { x:1, y:1, z:1 }, 1000 )
+	    //   .easing( TWEEN.Easing.Quadratic.Out )
+	    //   .start();
+
+	    mesh.material.opacity = 0;
+			new TWEEN.Tween( mesh.material )
+	      .to( { opacity: 1 }, 2000 )
+	      .easing( TWEEN.Easing.Quadratic.Out )
+	      .start();
+	  }
+
+
+		var bubblesGroup = new THREE.Group;
+
+		function getTweets() {
+			dolly.add( bubblesGroup );
+
+	    // get a first set of tweets so that the screen isn't empty.
+	    var cachedTweets = Utils.loadJson('/tweets')
+	    var stagger = 50;
+	    var scale = 4;
+	    cachedTweets.then(function(tweets) {
+	      tweets.forEach(function(tweet, i) {
+	        var data = { text: tweet.text  }
+	        setTimeout(function() {
+	          makeBubble( data );
+	        }, i*stagger*scale);
+	      })
+	    })
+	  }
+
+
+    // gamepad
+    xBoxPad.on('pressed', function(buttons) {
+	    //if (buttons.length === 1 && buttons[0] === 'A') {
+	    if (buttons.length === 1 && buttons[0] === 'Start' || buttons[0] === 'A') {
+	      if (!playing) {
+	      	play();
+	      };
+
+	      return;
+	    };
+	  });
+
+		// keyboard
+		function onkey(event) {
+	    switch (event.keyCode) {
+	      case 13: // enter
+	        play();
+	        break;
+	    }
+    };
+
+
+		window.addEventListener("keydown", onkey, true);
 
 		init();
 

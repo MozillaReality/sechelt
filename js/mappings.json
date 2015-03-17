@@ -1,0 +1,666 @@
+{"mappings": [
+    {
+     "type": "hid",
+     "driver": "xpad",
+     "name": "Wireless 360 Controller",
+     "vendor_id": "45e",
+     "product_id": "28e",
+      "sticks": [
+          {
+              "x": 0,
+              "y": 1,
+              "press": 6
+          },
+          {
+              "x": 2,
+              "y": 3,
+              "press": 7
+          }
+      ],
+      "d-pads": [
+          {
+              "type": "buttons",
+              "left": 13,
+              "right": 14,
+              "up": 11,
+              "down": 12
+          }
+      ],
+      "buttons": {
+          "face": [
+              {"button": 0},
+              {"button": 1},
+              {"button": 2},
+              {"button": 3}
+          ],
+          "control": [
+              {"button": 9},
+              {"button": 8},
+              {"button": 10}
+          ],
+          "left_shoulder": [
+              {"button": 4},
+              {"axis": 4}
+          ],
+          "right_shoulder": [
+              {"button": 5},
+              {"axis": 5}
+          ]
+      },
+      "names": ["A", "B", "X", "Y", "LB", "RB","LT",
+              "RT", "Back", "Start", "LS",
+              "RS", "Up", "Down", "Left", "Right", "XBox"]
+    },
+    {
+     "type": "linux",
+     "driver": "xpad",
+     "name": "Xbox 360 Wireless Receiver",
+     "vendor_id": "045e",
+     "product_id": "0719",
+      "sticks": [
+          {
+              "x": 0,
+              "y": 1,
+              "press": 9
+          },
+          {
+              "x": 3,
+              "y": 4,
+              "press": 10
+          }
+      ],
+      "d-pads": [
+          {
+              "type": "buttons",
+              "left": 11,
+              "right": 12,
+              "up": 13,
+              "down": 14
+          }
+      ],
+      "buttons": {
+          "face": [
+              {"button": 0},
+              {"button": 1},
+              {"button": 2},
+              {"button": 3}
+          ],
+          "control": [
+              {"button": 6},
+              {"button": 7},
+              {"button": 8}
+          ],
+          "left_shoulder": [
+              {"button": 4},
+              {"axis": 2}
+          ],
+          "right_shoulder": [
+              {"button": 5},
+              {"axis": 5}
+          ]
+      }
+    },
+    {
+        "type": "linux",
+        "driver": "xpad",
+        "name": "Generic X-Box pad",
+        "vendor_id": "046d",
+        "product_id": "c21d",
+        "sticks": [
+            {
+                "press": 9,
+                "x": 0,
+                "y": 1
+            },
+            {
+                "press": 10,
+                "x": 3,
+                "y": 4
+            }
+        ],
+        "d-pads": [
+            {
+                "down": {
+                    "axis": 7
+                },
+                "right": {
+                    "axis": 6
+                },
+                "type": "axes",
+                "up": {
+                    "axis": 7
+                },
+                "left": {
+                    "axis": 6
+                }
+            }
+        ],
+        "buttons": {
+            "face": [
+                {
+                    "button": 0
+                },
+                {
+                    "button": 1
+                },
+                {
+                    "button": 2
+                },
+                {
+                    "button": 3
+                }
+            ],
+            "control": [
+                {
+                    "button": 6
+                },
+                {
+                    "button": 7
+                },
+                {
+                    "button": 8
+                }
+            ],
+            "left_shoulder": [
+                {
+                    "button": 4
+                },
+                {
+                    "axis": 2
+                }
+            ],
+            "right_shoulder": [
+                {
+                    "button": 5
+                },
+                {
+                    "axis": 5
+                }
+            ]
+        }
+    },
+    {
+     "type": "linux",
+     "driver": "usbhid",
+     "name": "PLAYSTATION(R)3 Controller",
+     "vendor_id": "054c",
+     "product_id": "0268",
+      "sticks": [
+          {
+              "x": 0,
+              "y": 1,
+              "press": 1
+          },
+          {
+              "x": 2,
+              "y": 3,
+              "press": 2
+          }
+      ],
+      "d-pads": [
+          {
+              "type": "buttons",
+              "left": {"button": 7, "axis": 11},
+              "right": {"button": 5, "axis": 9},
+              "up": {"button": 4, "axis": 8},
+              "down": {"button": 6, "axis": 10}
+          }
+      ],
+      "buttons": {
+          "face": [
+              {"button": 14, "axis": 18},
+              {"button": 13, "axis": 17},
+              {"button": 15, "axis": 19},
+              {"button": 12, "axis": 16}
+          ],
+          "control": [
+              {"button": 0},
+              {"button": 3},
+              {"button": 16}
+          ],
+          "left_shoulder": [
+              {"button": 10, "axis": 14},
+              {"button": 8, "axis": 12}
+          ],
+          "right_shoulder": [
+              {"button": 11, "axis": 15},
+              {"button": 9, "axis": 13}
+          ]
+      }
+    },
+    {
+      "type": "linux",
+      "driver": "usbhid",
+      "name": "Sony Computer Entertainment Wireless Controller",
+      "vendor_id": "054c",
+      "product_id": "05c4",
+      "sticks": [
+          {
+              "press": 10,
+              "x": 0,
+              "y": 1
+          },
+          {
+              "press": 11,
+              "x": 2,
+              "y": 5
+          }
+      ],
+      "d-pads": [
+          {
+              "type": "axes",
+              "down": {
+                  "axis": 7
+              },
+              "right": {
+                  "axis": 6
+              },
+              "up": {
+                 "axis": 7
+              },
+              "left": {
+                  "axis": 6
+              }
+          }
+      ],
+      "buttons": {
+          "face": [
+              {
+                 "button": 1
+              },
+              {
+                  "button": 2
+              },
+              {
+                  "button": 0
+              },
+              {
+                  "button": 3
+              }
+         ],
+         "control": [
+             {
+                 "button": 8
+             },
+             {
+                 "button": 9
+             },
+             {
+                 "button": 12
+             }
+         ],
+          "left_shoulder": [
+             {
+                 "button": 4
+             },
+             {
+                 "button": 6,
+                 "axis": 3
+             }
+          ],
+          "right_shoulder": [
+             {
+                 "button": 5
+             },
+             {
+                 "button": 7,
+                 "axis": 4
+             }
+          ]
+      }
+    },
+    {
+     "type": "linux",
+     "driver": "usbhid",
+     "name": "Microsoft SideWinder Plug & Play Game Pad",
+     "vendor_id": "045e",
+     "product_id": "0027",
+     "sticks": [],
+     "d-pads": [
+      {
+       "down": {
+        "axis": 1
+       },
+       "right": {
+        "axis": 0
+       },
+       "type": "axes",
+       "up": {
+        "axis": 1
+       },
+       "left": {
+        "axis": 0
+       }
+      }
+     ],
+     "buttons": {
+      "face": [
+       {
+        "button": 0
+       },
+       {
+        "button": 1
+       },
+       {
+        "button": 2
+       },
+       {
+        "button": 3
+       }
+      ],
+      "control": [],
+      "left_shoulder": [
+       {
+        "button": 4
+       }
+      ],
+      "right_shoulder": [
+       {
+        "button": 5
+       }
+      ]
+     }
+    },
+    {
+     "type": "linux",
+     "driver": "usbhid",
+     "name": "Gravis GamePad Pro USB ",
+     "vendor_id": "0428",
+     "product_id": "4001",
+     "sticks": [],
+     "d-pads": [
+      {
+       "down": {
+        "axis": 1
+       },
+       "right": {
+        "axis": 0
+       },
+       "type": "axes",
+       "up": {
+        "axis": 1
+       },
+       "left": {
+        "axis": 0
+       }
+      }
+     ],
+     "buttons": {
+      "face": [
+       {
+        "button": 1
+       },
+       {
+        "button": 2
+       },
+       {
+        "button": 0
+       },
+       {
+        "button": 3
+       }
+      ],
+      "control": [
+       {
+        "button": 8
+       },
+       {
+        "button": 9
+       }
+      ],
+      "left_shoulder": [
+       {
+        "button": 4
+       },
+       {
+        "button": 6
+       }
+      ],
+      "right_shoulder": [
+       {
+        "button": 5
+       },
+       {
+        "button": 7
+       }
+      ]
+     }
+    },
+    {
+     "type": "linux",
+     "driver": "usbhid",
+     "name": "Honey Bee AIRFLO",
+     "vendor_id": "124b",
+     "product_id": "4d01",
+     "sticks": [
+      {
+       "press": 11,
+       "x": 0,
+       "y": 1
+      },
+      {
+       "press": 12,
+       "x": 3,
+       "y": 2
+      }
+     ],
+     "d-pads": [
+      {
+       "down": {
+        "axis": 5
+       },
+       "right": {
+        "axis": 4
+       },
+       "type": "axes",
+       "up": {
+        "axis": 5
+       },
+       "left": {
+        "axis": 4
+       }
+      }
+     ],
+     "buttons": {
+      "face": [
+       {
+        "button": 0
+       },
+       {
+        "button": 1
+       },
+       {
+        "button": 2
+       },
+       {
+        "button": 3
+       }
+      ],
+      "control": [
+       {
+        "button": 8
+       },
+       {
+        "button": 9
+       },
+       {
+        "button": 10
+       }
+      ],
+      "left_shoulder": [
+       {
+        "button": 4
+       },
+       {
+        "button": 6
+       }
+      ],
+      "right_shoulder": [
+       {
+        "button": 5
+       },
+       {
+        "button": 7
+       }
+      ]
+     }
+    },
+    {
+     "type": "linux",
+     "driver": "bluetooth",
+     "name": "NYKO PLAYPAD PRO",
+     "vendor_id": "1d79",
+     "product_id": "0009",
+     "sticks": [
+      {
+       "press": 13,
+       "x": 0,
+       "y": 1
+      },
+      {
+       "press": 14,
+       "x": 2,
+       "y": 3
+      }
+     ],
+     "d-pads": [
+      {
+       "down": {
+        "axis": 7
+       },
+       "right": {
+        "axis": 6
+       },
+       "type": "axes",
+       "up": {
+        "axis": 7
+       },
+       "left": {
+        "axis": 6
+       }
+      }
+     ],
+     "buttons": {
+      "face": [
+       {
+        "button": 0
+       },
+       {
+        "button": 1
+       },
+       {
+        "button": 3
+       },
+       {
+        "button": 4
+       }
+      ],
+      "control": [
+       {
+        "button": -1
+       },
+       {
+        "button": 11
+       },
+       {
+        "button": -1
+       }
+      ],
+      "left_shoulder": [
+       {
+        "button": 6
+       },
+       {
+        "axis": 5
+       }
+      ],
+      "right_shoulder": [
+       {
+        "button": 7
+       },
+       {
+        "axis": 4
+       }
+      ]
+     }
+    },
+    {
+     "type": "linux",
+     "driver": "xpad",
+     "name": "Microsoft X-Box One pad",
+     "vendor_id": "045e",
+     "product_id": "02d1",
+     "sticks": [
+      {
+       "press": 9,
+       "x": 0,
+       "y": 1
+      },
+      {
+       "press": 10,
+       "x": 3,
+       "y": 4
+      }
+     ],
+     "d-pads": [
+      {
+       "down": {
+        "axis": 7
+       },
+       "right": {
+        "axis": 6
+       },
+       "type": "axes",
+       "up": {
+        "axis": 7
+       },
+       "left": {
+        "axis": 6
+       }
+      }
+     ],
+     "buttons": {
+      "face": [
+       {
+        "button": 0
+       },
+       {
+        "button": 1
+       },
+       {
+        "button": 2
+       },
+       {
+        "button": 3
+       }
+      ],
+      "control": [
+       {
+        "button": 6
+       },
+       {
+        "button": 7
+       },
+       {
+        "button": 8
+       }
+      ],
+      "left_shoulder": [
+       {
+        "button": 4
+       },
+       {
+        "axis": 2
+       }
+      ],
+      "right_shoulder": [
+       {
+        "button": 5
+       },
+       {
+        "axis": 5
+       }
+      ]
+     }
+    }
+]}

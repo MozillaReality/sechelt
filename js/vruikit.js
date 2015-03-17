@@ -10,7 +10,6 @@ VRUIKit.TextLabel = function(text, opts) {
   this.width = opts.hasOwnProperty('width') ? opts.width : 1; // three js units
   this.height = opts.hasOwnProperty('height') ? opts.height : 0.2;
 
-
   // CSS Text format
   // Formal syntax: [ [ <‘font-style’> || <font-variant-css21> || <‘font-weight’> || <‘font-stretch’> ]? <‘font-size’> [ / <‘line-height’> ]? <‘font-family’> ] | caption | icon | menu | message-box | small-caption | status-bar
   // https://developer.mozilla.org/en-US/docs/Web/CSS/font
@@ -22,6 +21,8 @@ VRUIKit.TextLabel = function(text, opts) {
   this.lineHeight = opts.hasOwnProperty('lineHeight') ? opts['lineHeight'] : 30; // px
   this.fillStyle = opts.hasOwnProperty('color') ? opts['color'] : 'black';
   this.background = opts.hasOwnProperty('background') ? opts['background'] : null;
+  this.wrapText = opts.hasOwnProperty('wrapText') ? opts['wrapText'] : false;
+
 
   var canvas = document.createElement('canvas');
 
@@ -66,7 +67,29 @@ VRUIKit.TextLabel.prototype.set = function(text) {
 
   this.context.textAlign = this.textAlign;
 
-  var textLines = this.text.split('\n');
+
+  var textLines = [];
+
+  if (this.wrapText) {
+    var words = this.text.split(' ');
+    var line = '';
+    var maxWidth = (this.width * this.pixel2three);
+    var textLines = [];
+
+    for (var i = 0; i < words.length; i++) {
+      var testline = line + words[i] + ' ';
+      var metrics = this.context.measureText(testline);
+
+      if (metrics.width > maxWidth && i > 0) {
+        textLines.push(line);
+        line = words[i] + ' ';
+      } else {
+        line = testline
+      }
+    }
+  } else {
+    textLines = this.text.split('\n');
+  }
 
   var x, y;
 
@@ -191,7 +214,7 @@ VRUIKit.makeFrame = function( width, height, depth, renderWidth, renderHeight, r
 }
 
 VRUIKit.makeCurvedPlane = function( width, height, radius, color ) {
-  
+
   var C = 2 * Math.PI * radius;
   var thetaLength = (Math.PI*2) * (width/C);
 
