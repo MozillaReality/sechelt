@@ -146,7 +146,9 @@ GyroPositionSensorVRDevice.prototype = new PositionSensorVRDevice();
  */
 GyroPositionSensorVRDevice.prototype.getState = function() {
   return {
+    hasOrientation: true,
     orientation: this.getOrientation(),
+    hasPosition: false,
     position: null
   }
 };
@@ -272,7 +274,9 @@ MouseKeyboardPositionSensorVRDevice.prototype.getState = function() {
   this.orientation.setFromEuler(this.euler);
 
   return {
+    hasOrientation: true,
     orientation: this.orientation,
+    hasPosition: false,
     position: null
   }
 };
@@ -332,10 +336,17 @@ MouseKeyboardPositionSensorVRDevice.prototype.onMouseDown_ = function(e) {
 
 // Very similar to https://gist.github.com/mrflix/8351020
 MouseKeyboardPositionSensorVRDevice.prototype.onMouseMove_ = function(e) {
-  if (!this.isDragging) {
+  if (!this.isDragging && !this.isPointerLocked_()) {
     return;
   }
-  this.rotateEnd.set(e.clientX, e.clientY);
+  // Support pointer lock API.
+  if (this.isPointerLocked_()) {
+    var movementX = e.movementX || e.mozMovementX || e.webkitMovementX || 0;
+    var movementY = e.movementY || e.mozMovementY || e.webkitMovementY || 0;
+    this.rotateEnd.set(this.rotateStart.x - movementX, this.rotateStart.y - movementY);
+  } else {
+    this.rotateEnd.set(e.clientX, e.clientY);
+  }
   // Calculate how much we moved in mouse space.
   this.rotateDelta.subVectors(this.rotateEnd, this.rotateStart);
   this.rotateStart.copy(this.rotateEnd);
@@ -355,6 +366,12 @@ MouseKeyboardPositionSensorVRDevice.prototype.onMouseUp_ = function(e) {
 
 MouseKeyboardPositionSensorVRDevice.prototype.clamp_ = function(value, min, max) {
   return Math.min(Math.max(min, value), max);
+};
+
+MouseKeyboardPositionSensorVRDevice.prototype.isPointerLocked_ = function() {
+  var el = document.pointerLockElement || document.mozPointerLockElement ||
+      document.webkitPointerLockElement;
+  return el !== undefined;
 };
 
 module.exports = MouseKeyboardPositionSensorVRDevice;
@@ -2501,17 +2518,21 @@ module.exports = THREE;
 var CardboardHMDVRDevice = require('./cardboard-hmd-vr-device.js');
 var GyroPositionSensorVRDevice = require('./gyro-position-sensor-vr-device.js');
 var MouseKeyboardPositionSensorVRDevice = require('./mouse-keyboard-position-sensor-vr-device.js');
+// Uncomment to add positional tracking via webcam.
+//var WebcamPositionSensorVRDevice = require('./webcam-position-sensor-vr-device.js');
 var HMDVRDevice = require('./base.js').HMDVRDevice;
 var PositionSensorVRDevice = require('./base.js').PositionSensorVRDevice;
 
 function WebVRPolyfill() {
   this.devices = [];
 
-  // Feature detect for existing WebVR API.
-  if ('getVRDevices' in navigator) {
-    return;
+  if (!('getVRDevices' in navigator)) {
+    // If the WebVR API doesn't exist, we should enable the polyfill.
+    this.enablePolyfill();
   }
+}
 
+WebVRPolyfill.prototype.enablePolyfill = function() {
   // Initialize our virtual VR devices.
   if (this.isCardboardCompatible()) {
     this.devices.push(new CardboardHMDVRDevice());
@@ -2522,6 +2543,8 @@ function WebVRPolyfill() {
     this.devices.push(new GyroPositionSensorVRDevice());
   } else {
     this.devices.push(new MouseKeyboardPositionSensorVRDevice());
+    // Uncomment to add positional tracking via webcam.
+    //this.devices.push(new WebcamPositionSensorVRDevice());
   }
 
   // Provide navigator.getVRDevices.
@@ -2530,7 +2553,7 @@ function WebVRPolyfill() {
   // Provide the CardboardHMDVRDevice and PositionSensorVRDevice objects.
   window.HMDVRDevice = HMDVRDevice;
   window.PositionSensorVRDevice = PositionSensorVRDevice;
-}
+};
 
 WebVRPolyfill.prototype.getVRDevices = function() {
   var devices = this.devices;
