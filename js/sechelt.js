@@ -10,6 +10,7 @@ var parameters = (function() {
 
 var camera, scene, renderer;
 var controls, effect;
+var orbitControls;
 var controls2, clock = new THREE.Clock();
 var sky, water;
 var cameraPath;
@@ -40,6 +41,8 @@ function init() {
 	// Effect and Controls for VR
 	effect = new THREE.VREffect(renderer);
 	controls = new THREE.VRControls(camera);
+
+	orbitControls = new THREE.OrbitControls(camera);
 
 	onWindowResize();
 
@@ -359,8 +362,10 @@ function animate(time) {
 
 	if (manager.isVRMode()) {
 		effect.render(scene, camera);
+		controls.update();
 	} else {
 		renderer.render(scene, camera);
+		orbitControls.update();
 	}
 
 }
