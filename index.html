@@ -16,7 +16,7 @@
 	</head>
 
 	<body>
-		<script src="js/three.min.js"></script>
+		<script src="js/three.js"></script>
 		<script src="js/tween.min.js"></script>
 		<script src="js/VRControls.js"></script>
 		<script src="js/VREffect.js"></script>
@@ -69,7 +69,7 @@
       onWindowResize();
 
       // Initialize the WebVR manager.
-      manager = new WebVRManager(effect);
+      manager = new WebVRManager(renderer, effect);
 
 			// skybox
 			var geometry = new THREE.SphereGeometry( 10000, 64, 32 );
