@@ -15,8 +15,8 @@ THREE.VRControls = function ( object, onError ) {
 
 			var device = devices[ i ];
 
-			if ( device instanceof PositionSensorVRDevice && device.deviceName.indexOf('cardboard') == -1) {
-				console.log(device);
+			if ( device instanceof PositionSensorVRDevice ) {
+
 				vrInputs.push( devices[ i ] );
 
 			}
