@@ -47,7 +47,7 @@ function init() {
 	onWindowResize();
 
 	// Initialize the WebVR manager.
-	manager = new WebVRManager(effect);
+	manager = new WebVRManager(renderer, effect);
 
 	// skybox
 	var geometry = new THREE.SphereGeometry(10000, 64, 32);
