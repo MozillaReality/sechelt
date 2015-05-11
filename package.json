@@ -1,0 +1,22 @@
+{
+  "name": "sechelt",
+  "version": "0.0.1",
+  "description": "Sechelt",
+  "scripts": {
+    "start": "http-server ./"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/mozvr/sechelt.git"
+  },
+  "license": "MPL",
+  "bugs": {
+    "url": "https://github.com/mozvr/sechelt/issues"
+  },
+  "engines": {
+    "node": "0.12.x"
+  },
+  "devDependencies": {
+    "http-server": "^0.7.4"
+  }
+}
