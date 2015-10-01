@@ -79,13 +79,16 @@ function init() {
 
 	}
 
+  var texture = THREE.ImageUtils.loadTexture('images/bg-2.png');
+  texture.minFilter = THREE.LinearFilter;
+
 	var material = new THREE.MeshBasicMaterial({
 		//vertexColors: THREE.VertexColors,
 		side: THREE.BackSide,
 		depthWrite: false,
 		depthTest: false,
 		fog: false,
-		map: THREE.ImageUtils.loadTexture('images/bg-2.png')
+		map: texture
 	});
 
 	sky = new THREE.Mesh(geometry, material);
