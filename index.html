@@ -3,28 +3,36 @@
 	<head>
 		<title>Sechelt</title>
 		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-		<meta content="Josh Carpenter%0DMr.doob%0D—%0Dthree.js, Cinema 4D" name="description">
 		<style>
-			html, body {
-				background-color: #000;
-				color: #fff;
-				margin: 0px;
-				overflow: hidden;
-			}
+		html, body {
+			background-color: #000;
+			color: #fff;
+			margin: 0px;
+			overflow: hidden;
+		}
+		#enterVr {
+			position: absolute;
+			top: 0;
+			left: 0;
+			margin: 10px;
+			background: black;
+			border: 0;
+			color: #fff;
+			padding: 10px;
+			font-size: 1rem;
+		}
 		</style>
 	</head>
 
 	<body>
+		<button id="enterVr">ENTER VR</button>
 		<script src="js/three.min.js"></script>
-		<script src="js/tween.min.js"></script>
+		<script src="js/webvr-polyfill.js"></script>
 		<script src="js/VRControls.js"></script>
 		<script src="js/VREffect.js"></script>
 		<script src="js/OrbitControls.js"></script>
+		<script src="js/tween.min.js"></script>
 		<script src="js/C4DCurveLoader.js"></script>
-		<script src="js/webvr-polyfill.js"></script>
-		<script src="js/webvr-manager.js"></script>
 		<script src="js/sechelt.js"></script>
-
 	</body>
 </html>

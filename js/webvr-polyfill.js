@@ -1,6 +1,6 @@
-(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
 /*
- * Copyright 2015 Boris Smus. All Rights Reserved.
+ * Copyright 2015 Google Inc. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -41,9 +41,9 @@ module.exports.VRDevice = VRDevice;
 module.exports.HMDVRDevice = HMDVRDevice;
 module.exports.PositionSensorVRDevice = PositionSensorVRDevice;
 
-},{}],2:[function(require,module,exports){
+},{}],2:[function(_dereq_,module,exports){
 /*
- * Copyright 2015 Boris Smus. All Rights Reserved.
+ * Copyright 2015 Google Inc. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -56,36 +56,20 @@ module.exports.PositionSensorVRDevice = PositionSensorVRDevice;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-var HMDVRDevice = require('./base.js').HMDVRDevice;
+var HMDVRDevice = _dereq_('./base.js').HMDVRDevice;
 
 // Constants from vrtoolkit: https://github.com/googlesamples/cardboard-java.
-var INTERPUPILLARY_DISTANCE = 0.06;
-var DEFAULT_MAX_FOV_LEFT_RIGHT = 40;
-var DEFAULT_MAX_FOV_BOTTOM = 40;
-var DEFAULT_MAX_FOV_TOP = 40;
+var DEFAULT_INTERPUPILLARY_DISTANCE = 0.06;
+var DEFAULT_FIELD_OF_VIEW = 40;
 
 /**
  * The HMD itself, providing rendering parameters.
  */
 function CardboardHMDVRDevice() {
   // From com/google/vrtoolkit/cardboard/FieldOfView.java.
-  this.fov = {
-    upDegrees: DEFAULT_MAX_FOV_TOP,
-    downDegrees: DEFAULT_MAX_FOV_BOTTOM,
-    leftDegrees: DEFAULT_MAX_FOV_LEFT_RIGHT,
-    rightDegrees: DEFAULT_MAX_FOV_LEFT_RIGHT
-  };
+  this.setFieldOfView(DEFAULT_FIELD_OF_VIEW);
   // Set display constants.
-  this.eyeTranslationLeft = {
-    x: INTERPUPILLARY_DISTANCE * -0.5,
-    y: 0,
-    z: 0
-  };
-  this.eyeTranslationRight = {
-    x: INTERPUPILLARY_DISTANCE * 0.5,
-    y: 0,
-    z: 0
-  };
+  this.setInterpupillaryDistance(DEFAULT_INTERPUPILLARY_DISTANCE);
 }
 CardboardHMDVRDevice.prototype = new HMDVRDevice();
 
@@ -105,11 +89,41 @@ CardboardHMDVRDevice.prototype.getEyeParameters = function(whichEye) {
   };
 };
 
+/**
+ * Sets the IPD (in m) of this device. Useful for initialization and for
+ * changing viewer parameters dynamically.
+ */
+CardboardHMDVRDevice.prototype.setInterpupillaryDistance = function(ipd) {
+  this.eyeTranslationLeft = {
+    x: ipd * -0.5,
+    y: 0,
+    z: 0
+  };
+  this.eyeTranslationRight = {
+    x: ipd * 0.5,
+    y: 0,
+    z: 0
+  };
+};
+
+/**
+ * Sets the FOV (in degrees) of this viewer. Useful for initialization and
+ * changing viewer parameters dynamically.
+ */
+CardboardHMDVRDevice.prototype.setFieldOfView = function(angle) {
+  this.fov = {
+    upDegrees: angle,
+    downDegrees: angle,
+    leftDegrees: angle,
+    rightDegrees: angle
+  };
+};
+
 module.exports = CardboardHMDVRDevice;
 
-},{"./base.js":1}],3:[function(require,module,exports){
+},{"./base.js":1}],3:[function(_dereq_,module,exports){
 /*
- * Copyright 2015 Boris Smus. All Rights Reserved.
+ * Copyright 2015 Google Inc. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -122,36 +136,224 @@ module.exports = CardboardHMDVRDevice;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-var PositionSensorVRDevice = require('./base.js').PositionSensorVRDevice;
-var THREE = require('./three-math.js');
 
 /**
- * The positional sensor, implemented using web DeviceOrientation APIs.
+ * TODO: Fix up all "new THREE" instantiations to improve performance.
  */
-function GyroPositionSensorVRDevice() {
-  this.deviceId = 'webvr-polyfill:gyro';
-  this.deviceName = 'VR Position Device (webvr-polyfill:gyro)';
+var SensorSample = _dereq_('./sensor-sample.js');
+var THREE = _dereq_('./three-math.js');
+var Util = _dereq_('./util.js');
 
-  // Subscribe to deviceorientation events.
-  window.addEventListener('deviceorientation', this.onDeviceOrientationChange.bind(this));
-  window.addEventListener('orientationchange', this.onScreenOrientationChange.bind(this));
-  this.deviceOrientation = null;
-  this.screenOrientation = window.orientation;
+var DEBUG = false;
 
-  // Helper objects for calculating orientation.
-  this.finalQuaternion = new THREE.Quaternion();
-  this.deviceEuler = new THREE.Euler();
-  this.screenTransform = new THREE.Quaternion();
-  // -PI/2 around the x-axis.
-  this.worldTransform = new THREE.Quaternion(-Math.sqrt(0.5), 0, 0, Math.sqrt(0.5));
+/**
+ * An implementation of a simple complementary filter, which fuses gyroscope and
+ * accelerometer data from the 'devicemotion' event.
+ *
+ * Accelerometer data is very noisy, but stable over the long term.
+ * Gyroscope data is smooth, but tends to drift over the long term.
+ *
+ * This fusion is relatively simple:
+ * 1. Get orientation estimates from accelerometer by applying a low-pass filter
+ *    on that data.
+ * 2. Get orientation estimates from gyroscope by integrating over time.
+ * 3. Combine the two estimates, weighing (1) in the long term, but (2) for the
+ *    short term.
+ */
+function ComplementaryFilter(kFilter) {
+  this.kFilter = kFilter;
+
+  // Raw sensor measurements.
+  this.currentAccelMeasurement = new SensorSample();
+  this.currentGyroMeasurement = new SensorSample();
+  this.previousGyroMeasurement = new SensorSample();
+
+  // Current filter orientation
+  this.filterQ = new THREE.Quaternion();
+  this.previousFilterQ = new THREE.Quaternion();
+
+  // Orientation based on the accelerometer.
+  this.accelQ = new THREE.Quaternion();
+  // Whether or not the orientation has been initialized.
+  this.isOrientationInitialized = false;
+  // Running estimate of gravity based on the current orientation.
+  this.estimatedGravity = new THREE.Vector3();
+  // Measured gravity based on accelerometer.
+  this.measuredGravity = new THREE.Vector3();
+
+  // Debug only quaternion of gyro-based orientation.
+  this.gyroIntegralQ = new THREE.Quaternion();
 }
-GyroPositionSensorVRDevice.prototype = new PositionSensorVRDevice();
+
+ComplementaryFilter.prototype.addAccelMeasurement = function(vector, timestampS) {
+  this.currentAccelMeasurement.set(vector, timestampS);
+};
+
+ComplementaryFilter.prototype.addGyroMeasurement = function(vector, timestampS) {
+  this.currentGyroMeasurement.set(vector, timestampS);
+
+  var deltaT = timestampS - this.previousGyroMeasurement.timestampS;
+  if (Util.isTimestampDeltaValid(deltaT)) {
+    this.run_();
+  }
+  
+  this.previousGyroMeasurement.copy(this.currentGyroMeasurement);
+};
+
+ComplementaryFilter.prototype.run_ = function() {
+
+  if (!this.isOrientationInitialized) {
+    this.accelQ = this.accelToQuaternion_(this.currentAccelMeasurement.sample);
+    this.previousFilterQ.copy(this.accelQ);
+    this.isOrientationInitialized = true;
+    return;
+  }
+
+  var deltaT = this.currentGyroMeasurement.timestampS -
+      this.previousGyroMeasurement.timestampS;
+
+  // Convert gyro rotation vector to a quaternion delta.
+  var gyroDeltaQ = this.gyroToQuaternionDelta_(this.currentGyroMeasurement.sample, deltaT);
+  this.gyroIntegralQ.multiply(gyroDeltaQ);
+
+  // filter_1 = K * (filter_0 + gyro * dT) + (1 - K) * accel.
+  this.filterQ.copy(this.previousFilterQ);
+  this.filterQ.multiply(gyroDeltaQ);
+
+  // Calculate the delta between the current estimated gravity and the real
+  // gravity vector from accelerometer.
+  var invFilterQ = new THREE.Quaternion();
+  invFilterQ.copy(this.filterQ);
+  invFilterQ.inverse();
+
+  this.estimatedGravity.set(0, 0, -1);
+  this.estimatedGravity.applyQuaternion(invFilterQ);
+  this.estimatedGravity.normalize();
+
+  this.measuredGravity.copy(this.currentAccelMeasurement.sample);
+  this.measuredGravity.normalize();
+
+  // Compare estimated gravity with measured gravity, get the delta quaternion
+  // between the two.
+  var deltaQ = new THREE.Quaternion();
+  deltaQ.setFromUnitVectors(this.estimatedGravity, this.measuredGravity);
+  deltaQ.inverse();
+
+  if (DEBUG) {
+    console.log('Delta: %d deg, G_est: (%s, %s, %s), G_meas: (%s, %s, %s)',
+                THREE.Math.radToDeg(Util.getQuaternionAngle(deltaQ)),
+                (this.estimatedGravity.x).toFixed(1),
+                (this.estimatedGravity.y).toFixed(1),
+                (this.estimatedGravity.z).toFixed(1),
+                (this.measuredGravity.x).toFixed(1),
+                (this.measuredGravity.y).toFixed(1),
+                (this.measuredGravity.z).toFixed(1));
+  }
+
+  // Calculate the SLERP target: current orientation plus the measured-estimated
+  // quaternion delta.
+  var targetQ = new THREE.Quaternion();
+  targetQ.copy(this.filterQ);
+  targetQ.multiply(deltaQ);
+
+  // SLERP factor: 0 is pure gyro, 1 is pure accel.
+  this.filterQ.slerp(targetQ, 1 - this.kFilter);
+
+  this.previousFilterQ.copy(this.filterQ);
+};
+
+ComplementaryFilter.prototype.getOrientation = function() {
+  return this.filterQ;
+};
+
+ComplementaryFilter.prototype.accelToQuaternion_ = function(accel) {
+  var normAccel = new THREE.Vector3();
+  normAccel.copy(accel);
+  normAccel.normalize();
+  var quat = new THREE.Quaternion();
+  quat.setFromUnitVectors(new THREE.Vector3(0, 0, -1), normAccel);
+  quat.inverse();
+  return quat;
+};
+
+ComplementaryFilter.prototype.gyroToQuaternionDelta_ = function(gyro, dt) {
+  // Extract axis and angle from the gyroscope data.
+  var quat = new THREE.Quaternion();
+  var axis = new THREE.Vector3();
+  axis.copy(gyro);
+  axis.normalize();
+  quat.setFromAxisAngle(axis, gyro.length() * dt);
+  return quat;
+};
+
+
+module.exports = ComplementaryFilter;
+
+},{"./sensor-sample.js":8,"./three-math.js":9,"./util.js":11}],4:[function(_dereq_,module,exports){
+/*
+ * Copyright 2015 Google Inc. All Rights Reserved.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+var PositionSensorVRDevice = _dereq_('./base.js').PositionSensorVRDevice;
+
+var ComplementaryFilter = _dereq_('./complementary-filter.js');
+var PosePredictor = _dereq_('./pose-predictor.js');
+var TouchPanner = _dereq_('./touch-panner.js');
+var THREE = _dereq_('./three-math.js');
+var Util = _dereq_('./util.js');
+
+/**
+ * The positional sensor, implemented using DeviceMotion APIs.
+ */
+function FusionPositionSensorVRDevice() {
+  this.deviceId = 'webvr-polyfill:fused';
+  this.deviceName = 'VR Position Device (webvr-polyfill:fused)';
+
+  this.accelerometer = new THREE.Vector3();
+  this.gyroscope = new THREE.Vector3();
+
+  window.addEventListener('devicemotion', this.onDeviceMotionChange_.bind(this));
+  window.addEventListener('orientationchange', this.onScreenOrientationChange_.bind(this));
+
+  this.filter = new ComplementaryFilter(WebVRConfig.K_FILTER || 0.98);
+  this.posePredictor = new PosePredictor(WebVRConfig.PREDICTION_TIME_S || 0.040);
+  this.touchPanner = new TouchPanner();
+
+  this.filterToWorldQ = new THREE.Quaternion();
+
+  // Set the filter to world transform, depending on OS.
+  if (Util.isIOS()) {
+    this.filterToWorldQ.setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI/2);
+  } else {
+    this.filterToWorldQ.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI/2);
+  }
+
+  this.worldToScreenQ = new THREE.Quaternion();
+  this.setScreenTransform_();
+
+  // Keep track of a reset transform for resetSensor.
+  this.resetQ = new THREE.Quaternion();
+
+  this.isFirefoxAndroid = Util.isFirefoxAndroid();
+  this.isIOS = Util.isIOS();
+}
+FusionPositionSensorVRDevice.prototype = new PositionSensorVRDevice();
 
 /**
  * Returns {orientation: {x,y,z,w}, position: null}.
  * Position is not supported since we can't do 6DOF.
  */
-GyroPositionSensorVRDevice.prototype.getState = function() {
+FusionPositionSensorVRDevice.prototype.getState = function() {
   return {
     hasOrientation: true,
     orientation: this.getOrientation(),
@@ -160,47 +362,105 @@ GyroPositionSensorVRDevice.prototype.getState = function() {
   }
 };
 
-GyroPositionSensorVRDevice.prototype.onDeviceOrientationChange =
-    function(deviceOrientation) {
-  this.deviceOrientation = deviceOrientation;
+FusionPositionSensorVRDevice.prototype.getOrientation = function() {
+  // Convert from filter space to the the same system used by the
+  // deviceorientation event.
+  var orientation = this.filter.getOrientation();
+
+  // Predict orientation.
+  this.predictedQ = this.posePredictor.getPrediction(orientation, this.gyroscope, this.previousTimestampS);
+
+  // Convert to THREE coordinate system: -Z forward, Y up, X right.
+  var out = new THREE.Quaternion();
+  out.copy(this.filterToWorldQ);
+  out.multiply(this.resetQ);
+  if (!WebVRConfig.TOUCH_PANNER_DISABLED) {
+    out.multiply(this.touchPanner.getOrientation());
+  }
+  out.multiply(this.predictedQ);
+  out.multiply(this.worldToScreenQ);
+
+  // Handle the yaw-only case.
+  if (WebVRConfig.YAW_ONLY) {
+    // Make a quaternion that only turns around the Y-axis.
+    out.x = 0;
+    out.z = 0;
+    out.normalize();
+  }
+  return out;
 };
 
-GyroPositionSensorVRDevice.prototype.onScreenOrientationChange =
-    function(screenOrientation) {
-  this.screenOrientation = window.orientation;
+FusionPositionSensorVRDevice.prototype.resetSensor = function() {
+  var euler = new THREE.Euler();
+  euler.setFromQuaternion(this.filter.getOrientation());
+  var yaw = euler.y;
+  console.log('resetSensor with yaw: %f', yaw);
+  this.resetQ.setFromAxisAngle(new THREE.Vector3(0, 0, 1), -yaw);
+  if (!WebVRConfig.TOUCH_PANNER_DISABLED) {
+    this.touchPanner.resetSensor();
+  }
 };
 
-GyroPositionSensorVRDevice.prototype.getOrientation = function() {
-  if (this.deviceOrientation == null) {
-    return null;
+FusionPositionSensorVRDevice.prototype.onDeviceMotionChange_ = function(deviceMotion) {
+  var accGravity = deviceMotion.accelerationIncludingGravity;
+  var rotRate = deviceMotion.rotationRate;
+  var timestampS = deviceMotion.timeStamp / 1000;
+
+  // Firefox Android timeStamp returns one thousandth of a millisecond.
+  if (this.isFirefoxAndroid) {
+    timestampS /= 1000;
   }
 
-  // Rotation around the z-axis.
-  var alpha = THREE.Math.degToRad(this.deviceOrientation.alpha);
-  // Front-to-back (in portrait) rotation (x-axis).
-  var beta = THREE.Math.degToRad(this.deviceOrientation.beta);
-  // Left to right (in portrait) rotation (y-axis).
-  var gamma = THREE.Math.degToRad(this.deviceOrientation.gamma);
-  var orient = THREE.Math.degToRad(this.screenOrientation);
+  var deltaS = timestampS - this.previousTimestampS;
+  if (deltaS <= Util.MIN_TIMESTEP || deltaS > Util.MAX_TIMESTEP) {
+    console.warn('Invalid timestamps detected. Time step between successive ' +
+                 'gyroscope sensor samples is very small or not monotonic');
+    this.previousTimestampS = timestampS;
+    return;
+  }
+  this.accelerometer.set(-accGravity.x, -accGravity.y, -accGravity.z);
+  this.gyroscope.set(rotRate.alpha, rotRate.beta, rotRate.gamma);
 
-  // Use three.js to convert to quaternion. Lifted from
-  // https://github.com/richtr/threeVR/blob/master/js/DeviceOrientationController.js
-  this.deviceEuler.set(beta, alpha, -gamma, 'YXZ');
-  this.finalQuaternion.setFromEuler(this.deviceEuler);
-  this.minusHalfAngle = -orient / 2;
-  this.screenTransform.set(0, Math.sin(this.minusHalfAngle), 0, Math.cos(this.minusHalfAngle));
-  this.finalQuaternion.multiply(this.screenTransform);
-  this.finalQuaternion.multiply(this.worldTransform);
+  // With iOS and Firefox Android, rotationRate is reported in degrees,
+  // so we first convert to radians.
+  if (this.isIOS || this.isFirefoxAndroid) {
+    this.gyroscope.multiplyScalar(Math.PI / 180);
+  }
 
-  return this.finalQuaternion;
+  this.filter.addAccelMeasurement(this.accelerometer, timestampS);
+  this.filter.addGyroMeasurement(this.gyroscope, timestampS);
+
+  this.previousTimestampS = timestampS;
+};
+
+FusionPositionSensorVRDevice.prototype.onScreenOrientationChange_ =
+    function(screenOrientation) {
+  this.setScreenTransform_();
+};
+
+FusionPositionSensorVRDevice.prototype.setScreenTransform_ = function() {
+  this.worldToScreenQ.set(0, 0, 0, 1);
+  switch (window.orientation) {
+    case 0:
+      break;
+    case 90:
+      this.worldToScreenQ.setFromAxisAngle(new THREE.Vector3(0, 0, 1), -Math.PI/2);
+      break;
+    case -90:
+      this.worldToScreenQ.setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI/2);
+      break;
+    case 180:
+      // TODO.
+      break;
+  }
 };
 
 
-module.exports = GyroPositionSensorVRDevice;
+module.exports = FusionPositionSensorVRDevice;
 
-},{"./base.js":1,"./three-math.js":6}],4:[function(require,module,exports){
+},{"./base.js":1,"./complementary-filter.js":3,"./pose-predictor.js":7,"./three-math.js":9,"./touch-panner.js":10,"./util.js":11}],5:[function(_dereq_,module,exports){
 /*
- * Copyright 2015 Boris Smus. All Rights Reserved.
+ * Copyright 2015 Google Inc. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -213,13 +473,15 @@ module.exports = GyroPositionSensorVRDevice;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-var WebVRPolyfill = require('./webvr-polyfill.js');
+var WebVRPolyfill = _dereq_('./webvr-polyfill.js');
 
+// Initialize a WebVRConfig just in case.
+window.WebVRConfig = window.WebVRConfig || {};
 new WebVRPolyfill();
 
-},{"./webvr-polyfill.js":7}],5:[function(require,module,exports){
+},{"./webvr-polyfill.js":12}],6:[function(_dereq_,module,exports){
 /*
- * Copyright 2015 Boris Smus. All Rights Reserved.
+ * Copyright 2015 Google Inc. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -232,8 +494,9 @@ new WebVRPolyfill();
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-var PositionSensorVRDevice = require('./base.js').PositionSensorVRDevice;
-var THREE = require('./three-math.js');
+var PositionSensorVRDevice = _dereq_('./base.js').PositionSensorVRDevice;
+var THREE = _dereq_('./three-math.js');
+var Util = _dereq_('./util.js');
 
 // How much to rotate per key stroke.
 var KEY_SPEED = 0.15;
@@ -293,13 +556,13 @@ MouseKeyboardPositionSensorVRDevice.prototype.getState = function() {
 
 MouseKeyboardPositionSensorVRDevice.prototype.onKeyDown_ = function(e) {
   // Track WASD and arrow keys.
-  if (e.keyCode == 38 || e.keyCode == 87) { // W or Up key.
+  if (e.keyCode == 38) { // Up key.
     this.animatePhi_(this.phi + KEY_SPEED);
-  } else if (e.keyCode == 39 || e.keyCode == 68) { // D or Right key.
+  } else if (e.keyCode == 39) { // Right key.
     this.animateTheta_(this.theta - KEY_SPEED);
-  } else if (e.keyCode == 40 || e.keyCode == 83) { // S or Down key.
+  } else if (e.keyCode == 40) { // Down key.
     this.animatePhi_(this.phi - KEY_SPEED);
-  } else if (e.keyCode == 37 || e.keyCode == 65) { // A or Left key.
+  } else if (e.keyCode == 37) { // Left key.
     this.animateTheta_(this.theta + KEY_SPEED);
   }
 };
@@ -310,7 +573,7 @@ MouseKeyboardPositionSensorVRDevice.prototype.animateTheta_ = function(targetAng
 
 MouseKeyboardPositionSensorVRDevice.prototype.animatePhi_ = function(targetAngle) {
   // Prevent looking too far up or down.
-  targetAngle = this.clamp_(targetAngle, -Math.PI/2, Math.PI/2);
+  targetAngle = Util.clamp(targetAngle, -Math.PI/2, Math.PI/2);
   this.animateKeyTransitions_('phi', targetAngle);
 };
 
@@ -351,8 +614,8 @@ MouseKeyboardPositionSensorVRDevice.prototype.onMouseMove_ = function(e) {
   }
   // Support pointer lock API.
   if (this.isPointerLocked_()) {
-    var movementX = e.movementX || e.mozMovementX || e.webkitMovementX || 0;
-    var movementY = e.movementY || e.mozMovementY || e.webkitMovementY || 0;
+    var movementX = e.movementX || e.mozMovementX || 0;
+    var movementY = e.movementY || e.mozMovementY || 0;
     this.rotateEnd.set(this.rotateStart.x - movementX, this.rotateStart.y - movementY);
   } else {
     this.rotateEnd.set(e.clientX, e.clientY);
@@ -367,15 +630,11 @@ MouseKeyboardPositionSensorVRDevice.prototype.onMouseMove_ = function(e) {
   this.theta += 2 * Math.PI * this.rotateDelta.x / element.clientWidth * MOUSE_SPEED_X;
 
   // Prevent looking too far up or down.
-  this.phi = this.clamp_(this.phi, -Math.PI/2, Math.PI/2);
+  this.phi = Util.clamp(this.phi, -Math.PI/2, Math.PI/2);
 };
 
 MouseKeyboardPositionSensorVRDevice.prototype.onMouseUp_ = function(e) {
   this.isDragging = false;
-};
-
-MouseKeyboardPositionSensorVRDevice.prototype.clamp_ = function(value, min, max) {
-  return Math.min(Math.max(min, value), max);
 };
 
 MouseKeyboardPositionSensorVRDevice.prototype.isPointerLocked_ = function() {
@@ -384,9 +643,112 @@ MouseKeyboardPositionSensorVRDevice.prototype.isPointerLocked_ = function() {
   return el !== undefined;
 };
 
+MouseKeyboardPositionSensorVRDevice.prototype.resetSensor = function() {
+  console.error('Not implemented yet.');
+};
+
 module.exports = MouseKeyboardPositionSensorVRDevice;
 
-},{"./base.js":1,"./three-math.js":6}],6:[function(require,module,exports){
+},{"./base.js":1,"./three-math.js":9,"./util.js":11}],7:[function(_dereq_,module,exports){
+/*
+ * Copyright 2015 Google Inc. All Rights Reserved.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+var THREE = _dereq_('./three-math.js');
+
+var DEBUG = false;
+
+/**
+ * Given an orientation and the gyroscope data, predicts the future orientation
+ * of the head. This makes rendering appear faster.
+ *
+ * Also see: http://msl.cs.uiuc.edu/~lavalle/papers/LavYerKatAnt14.pdf
+ *
+ * @param {Number} predictionTimeS time from head movement to the appearance of
+ * the corresponding image.
+ */
+function PosePredictor(predictionTimeS) {
+  this.predictionTimeS = predictionTimeS;
+
+  // The quaternion corresponding to the previous state.
+  this.previousQ = new THREE.Quaternion();
+  // Previous time a prediction occurred.
+  this.previousTimestampS = null;
+
+  // The delta quaternion that adjusts the current pose.
+  this.deltaQ = new THREE.Quaternion();
+  // The output quaternion.
+  this.outQ = new THREE.Quaternion();
+}
+
+PosePredictor.prototype.getPrediction = function(currentQ, gyro, timestampS) {
+  if (!this.previousTimestampS) {
+    this.previousQ.copy(currentQ);
+    this.previousTimestampS = timestampS;
+    return currentQ;
+  }
+
+  // Calculate axis and angle based on gyroscope rotation rate data.
+  var axis = new THREE.Vector3();
+  axis.copy(gyro);
+  axis.normalize();
+
+  var angularSpeed = gyro.length();
+
+  // If we're rotating slowly, don't do prediction.
+  if (angularSpeed < THREE.Math.degToRad(20)) {
+    if (DEBUG) {
+      console.log('Moving slowly, at %s deg/s: no prediction',
+                  THREE.Math.radToDeg(angularSpeed).toFixed(1));
+    }
+    this.outQ.copy(currentQ);
+    this.previousQ.copy(currentQ);
+    return this.outQ;
+  }
+
+  // Get the predicted angle based on the time delta and latency.
+  var deltaT = timestampS - this.previousTimestampS;
+  var predictAngle = angularSpeed * this.predictionTimeS;
+
+  this.deltaQ.setFromAxisAngle(axis, predictAngle);
+  this.outQ.copy(this.previousQ);
+  this.outQ.multiply(this.deltaQ);
+
+  this.previousQ.copy(currentQ);
+
+  return this.outQ;
+};
+
+
+module.exports = PosePredictor;
+
+},{"./three-math.js":9}],8:[function(_dereq_,module,exports){
+function SensorSample(sample, timestampS) {
+  this.set(sample, timestampS);
+};
+
+SensorSample.prototype.set = function(sample, timestampS) {
+  this.sample = sample;
+  this.timestampS = timestampS;
+};
+
+SensorSample.prototype.copy = function(sensorSample) {
+  this.set(sensorSample.sample, sensorSample.timestampS);
+};
+
+module.exports = SensorSample;
+
+},{}],9:[function(_dereq_,module,exports){
 /*
  * A subset of THREE.js, providing mostly quaternion and euler-related
  * operations, manually lifted from
@@ -397,7 +759,7 @@ module.exports = MouseKeyboardPositionSensorVRDevice;
 var THREE = window.THREE || {};
 
 // If some piece of THREE is missing, fill it in here.
-if (!THREE.Quaternion || !THREE.Vector3 || !THREE.Vector2 || !THREE.Euler) {
+if (!THREE.Quaternion || !THREE.Vector3 || !THREE.Vector2 || !THREE.Euler || !THREE.Math) {
 console.log('No THREE.js found.');
 
 
@@ -2505,14 +2867,185 @@ THREE.Euler.prototype = {
 
 };
 /*** END Euler ***/
+/*** START Math ***/
+/**
+ * @author alteredq / http://alteredqualia.com/
+ * @author mrdoob / http://mrdoob.com/
+ */
+
+THREE.Math = {
+
+	generateUUID: function () {
+
+		// http://www.broofa.com/Tools/Math.uuid.htm
+
+		var chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split( '' );
+		var uuid = new Array( 36 );
+		var rnd = 0, r;
+
+		return function () {
+
+			for ( var i = 0; i < 36; i ++ ) {
+
+				if ( i == 8 || i == 13 || i == 18 || i == 23 ) {
+
+					uuid[ i ] = '-';
+
+				} else if ( i == 14 ) {
+
+					uuid[ i ] = '4';
+
+				} else {
+
+					if ( rnd <= 0x02 ) rnd = 0x2000000 + ( Math.random() * 0x1000000 ) | 0;
+					r = rnd & 0xf;
+					rnd = rnd >> 4;
+					uuid[ i ] = chars[ ( i == 19 ) ? ( r & 0x3 ) | 0x8 : r ];
+
+				}
+			}
+
+			return uuid.join( '' );
+
+		};
+
+	}(),
+
+	// Clamp value to range <a, b>
+
+	clamp: function ( x, a, b ) {
+
+		return ( x < a ) ? a : ( ( x > b ) ? b : x );
+
+	},
+
+	// Clamp value to range <a, inf)
+
+	clampBottom: function ( x, a ) {
+
+		return x < a ? a : x;
+
+	},
+
+	// Linear mapping from range <a1, a2> to range <b1, b2>
+
+	mapLinear: function ( x, a1, a2, b1, b2 ) {
+
+		return b1 + ( x - a1 ) * ( b2 - b1 ) / ( a2 - a1 );
+
+	},
+
+	// http://en.wikipedia.org/wiki/Smoothstep
+
+	smoothstep: function ( x, min, max ) {
+
+		if ( x <= min ) return 0;
+		if ( x >= max ) return 1;
+
+		x = ( x - min ) / ( max - min );
+
+		return x * x * ( 3 - 2 * x );
+
+	},
+
+	smootherstep: function ( x, min, max ) {
+
+		if ( x <= min ) return 0;
+		if ( x >= max ) return 1;
+
+		x = ( x - min ) / ( max - min );
+
+		return x * x * x * ( x * ( x * 6 - 15 ) + 10 );
+
+	},
+
+	// Random float from <0, 1> with 16 bits of randomness
+	// (standard Math.random() creates repetitive patterns when applied over larger space)
+
+	random16: function () {
+
+		return ( 65280 * Math.random() + 255 * Math.random() ) / 65535;
+
+	},
+
+	// Random integer from <low, high> interval
+
+	randInt: function ( low, high ) {
+
+		return Math.floor( this.randFloat( low, high ) );
+
+	},
+
+	// Random float from <low, high> interval
+
+	randFloat: function ( low, high ) {
+
+		return low + Math.random() * ( high - low );
+
+	},
+
+	// Random float from <-range/2, range/2> interval
+
+	randFloatSpread: function ( range ) {
+
+		return range * ( 0.5 - Math.random() );
+
+	},
+
+	degToRad: function () {
+
+		var degreeToRadiansFactor = Math.PI / 180;
+
+		return function ( degrees ) {
+
+			return degrees * degreeToRadiansFactor;
+
+		};
+
+	}(),
+
+	radToDeg: function () {
+
+		var radianToDegreesFactor = 180 / Math.PI;
+
+		return function ( radians ) {
+
+			return radians * radianToDegreesFactor;
+
+		};
+
+	}(),
+
+	isPowerOfTwo: function ( value ) {
+
+		return ( value & ( value - 1 ) ) === 0 && value !== 0;
+
+	},
+
+	nextPowerOfTwo: function ( value ) {
+
+		value --;
+		value |= value >> 1;
+		value |= value >> 2;
+		value |= value >> 4;
+		value |= value >> 8;
+		value |= value >> 16;
+		value ++;
+
+		return value;
+	}
+
+};
+
+/*** END Math ***/
 
 }
 
 module.exports = THREE;
 
-},{}],7:[function(require,module,exports){
+},{}],10:[function(_dereq_,module,exports){
 /*
- * Copyright 2015 Boris Smus. All Rights Reserved.
+ * Copyright 2015 Google Inc. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -2525,13 +3058,141 @@ module.exports = THREE;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-var CardboardHMDVRDevice = require('./cardboard-hmd-vr-device.js');
-var GyroPositionSensorVRDevice = require('./gyro-position-sensor-vr-device.js');
-var MouseKeyboardPositionSensorVRDevice = require('./mouse-keyboard-position-sensor-vr-device.js');
+var THREE = _dereq_('./three-math.js');
+var Util = _dereq_('./util.js');
+
+var ROTATE_SPEED = 0.5;
+/**
+ * Provides a quaternion responsible for pre-panning the scene before further
+ * transformations due to device sensors.
+ */
+function TouchPanner() {
+  window.addEventListener('touchstart', this.onTouchStart_.bind(this));
+  window.addEventListener('touchmove', this.onTouchMove_.bind(this));
+  window.addEventListener('touchend', this.onTouchEnd_.bind(this));
+
+  this.isTouching = false;
+  this.rotateStart = new THREE.Vector2();
+  this.rotateEnd = new THREE.Vector2();
+  this.rotateDelta = new THREE.Vector2();
+
+  this.theta = 0;
+  this.orientation = new THREE.Quaternion();
+}
+
+TouchPanner.prototype.getOrientation = function() {
+  this.orientation.setFromEuler(new THREE.Euler(0, 0, this.theta));
+  return this.orientation;
+};
+
+TouchPanner.prototype.resetSensor = function() {
+  this.theta = 0;
+};
+
+TouchPanner.prototype.onTouchStart_ = function(e) {
+  // Only respond if there is exactly one touch.
+  if (e.touches.length != 1) {
+    return;
+  }
+  this.rotateStart.set(e.touches[0].pageX, e.touches[0].pageY);
+  this.isTouching = true;
+};
+
+TouchPanner.prototype.onTouchMove_ = function(e) {
+  if (!this.isTouching) {
+    return;
+  }
+  this.rotateEnd.set(e.touches[0].pageX, e.touches[0].pageY);
+  this.rotateDelta.subVectors(this.rotateEnd, this.rotateStart);
+  this.rotateStart.copy(this.rotateEnd);
+
+  // On iOS, direction is inverted.
+  if (Util.isIOS()) {
+    this.rotateDelta.x *= -1;
+  }
+
+  var element = document.body;
+  this.theta += 2 * Math.PI * this.rotateDelta.x / element.clientWidth * ROTATE_SPEED;
+};
+
+TouchPanner.prototype.onTouchEnd_ = function(e) {
+  this.isTouching = false;
+};
+
+module.exports = TouchPanner;
+
+},{"./three-math.js":9,"./util.js":11}],11:[function(_dereq_,module,exports){
+/*
+ * Copyright 2015 Google Inc. All Rights Reserved.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+var Util = window.Util || {};
+
+Util.MIN_TIMESTEP = 0.001;
+Util.MAX_TIMESTEP = 1;
+
+Util.clamp = function(value, min, max) {
+  return Math.min(Math.max(min, value), max);
+};
+
+Util.isIOS = function() {
+  return /iPad|iPhone|iPod/.test(navigator.platform);
+};
+
+Util.isFirefoxAndroid = function() {
+  return navigator.userAgent.indexOf('Firefox') !== -1 && navigator.userAgent.indexOf('Android') !== -1;
+}
+
+// Helper method to validate the time steps of sensor timestamps.
+Util.isTimestampDeltaValid = function(timestampDeltaS) {
+  if (isNaN(timestampDeltaS)) {
+    return false;
+  }
+  if (timestampDeltaS <= Util.MIN_TIMESTEP) {
+    return false;
+  }
+  if (timestampDeltaS > Util.MAX_TIMESTEP) {
+    return false;
+  }
+  return true;
+}
+
+module.exports = Util;
+
+},{}],12:[function(_dereq_,module,exports){
+/*
+ * Copyright 2015 Google Inc. All Rights Reserved.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+var CardboardHMDVRDevice = _dereq_('./cardboard-hmd-vr-device.js');
+//var OrientationPositionSensorVRDevice = require('./orientation-position-sensor-vr-device.js');
+var FusionPositionSensorVRDevice = _dereq_('./fusion-position-sensor-vr-device.js');
+var MouseKeyboardPositionSensorVRDevice = _dereq_('./mouse-keyboard-position-sensor-vr-device.js');
 // Uncomment to add positional tracking via webcam.
 //var WebcamPositionSensorVRDevice = require('./webcam-position-sensor-vr-device.js');
-var HMDVRDevice = require('./base.js').HMDVRDevice;
-var PositionSensorVRDevice = require('./base.js').PositionSensorVRDevice;
+var HMDVRDevice = _dereq_('./base.js').HMDVRDevice;
+var PositionSensorVRDevice = _dereq_('./base.js').PositionSensorVRDevice;
 
 function WebVRPolyfill() {
   this.devices = [];
@@ -2554,9 +3215,12 @@ WebVRPolyfill.prototype.enablePolyfill = function() {
 
   // Polyfill using the right position sensor.
   if (this.isMobile()) {
-    this.devices.push(new GyroPositionSensorVRDevice());
+    //this.devices.push(new OrientationPositionSensorVRDevice());
+    this.devices.push(new FusionPositionSensorVRDevice());
   } else {
-    this.devices.push(new MouseKeyboardPositionSensorVRDevice());
+    if (!WebVRConfig.MOUSE_KEYBOARD_CONTROLS_DISABLED) {
+      this.devices.push(new MouseKeyboardPositionSensorVRDevice());
+    }
     // Uncomment to add positional tracking via webcam.
     //this.devices.push(new WebcamPositionSensorVRDevice());
   }
@@ -2585,14 +3249,15 @@ WebVRPolyfill.prototype.getVRDevices = function() {
  */
 WebVRPolyfill.prototype.isMobile = function() {
   return /Android/i.test(navigator.userAgent) ||
-      /iPhone|iPad|iPod/i.test(navigator.userAgent);;
+      /iPhone|iPad|iPod/i.test(navigator.userAgent);
 };
 
 WebVRPolyfill.prototype.isCardboardCompatible = function() {
   // For now, support all iOS and Android devices.
-  return this.isMobile();
+  // Also enable the WebVRConfig.FORCE_VR flag for debugging.
+  return this.isMobile() || WebVRConfig.FORCE_ENABLE_VR;
 };
 
 module.exports = WebVRPolyfill;
 
-},{"./base.js":1,"./cardboard-hmd-vr-device.js":2,"./gyro-position-sensor-vr-device.js":3,"./mouse-keyboard-position-sensor-vr-device.js":5}]},{},[4]);
+},{"./base.js":1,"./cardboard-hmd-vr-device.js":2,"./fusion-position-sensor-vr-device.js":4,"./mouse-keyboard-position-sensor-vr-device.js":6}]},{},[5]);
