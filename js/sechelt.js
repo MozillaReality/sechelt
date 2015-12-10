@@ -14,12 +14,6 @@ var colorTop = new THREE.Color(0xdc72aa);
 var colorMiddle = new THREE.Color(0xfbdfd3);
 var colorBottom = new THREE.Color(0xdc72aa);
 
-// configure WebVR polyfill
-window.WebVRConfig = {
-  TOUCH_PANNER_DISABLED: true,
-  MOUSE_KEYBOARD_CONTROLS_DISABLED: true
-};
-
 var isMobile = function () {
   var check = false;
   (function (a) {
@@ -219,11 +213,10 @@ function animate(time) {
 
 	if (vrMode) {
 		effect.render(scene, camera);
-		vrControls.update();
 	}  else {
 		renderer.render(scene, camera);
-		orbitControls.update();
 	}
+	vrControls.update();
 
 	requestAnimationFrame(animate);
 }
@@ -261,11 +254,14 @@ function onFullscreenChange(e) {
     document.webkitFullscreenElement;
 
 	if (!fsElement) {
-    	vrMode = false;
-  	} else {
-  		// lock screen if mobile
-  		window.screen.orientation.lock('landscape');
-  	}
+  	vrMode = false;
+  	// orbitControls.enabled = true;
+  } else {
+		// lock screen if mobile
+		window.screen.orientation.lock('landscape');
+
+		// orbitControls.enabled = false;
+	}
 }
 
 function init() {
@@ -312,7 +308,7 @@ function init() {
 	// effect and controls for VR
 	effect = new THREE.VREffect(renderer);
 	vrControls = new THREE.VRControls(camera);
-	orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
+	//orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
 
 	window.addEventListener('resize', onWindowResize, false);
 }
