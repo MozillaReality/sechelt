@@ -1,5 +1,5 @@
 var camera, scene, renderer, effect;
-var vrControls, deviceOrientation;
+var vrControls, orbitControls;
 var sky, water;
 var cameraPath;
 var dolly;
@@ -13,6 +13,12 @@ var vrMode = false;
 var colorTop = new THREE.Color(0xdc72aa);
 var colorMiddle = new THREE.Color(0xfbdfd3);
 var colorBottom = new THREE.Color(0xdc72aa);
+
+// configure WebVR polyfill
+window.WebVRConfig = {
+  TOUCH_PANNER_DISABLED: true,
+  MOUSE_KEYBOARD_CONTROLS_DISABLED: true
+};
 
 var isMobile = function () {
   var check = false;
@@ -306,7 +312,7 @@ function init() {
 	// effect and controls for VR
 	effect = new THREE.VREffect(renderer);
 	vrControls = new THREE.VRControls(camera);
-	orbitControls = new THREE.OrbitControls(camera);
+	orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
 
 	window.addEventListener('resize', onWindowResize, false);
 }
