@@ -7,8 +7,10 @@ var dolly;
 var currentTime = null;
 var startTime = null;
 var gotime = null;
-var speed = 20;
 var vrMode = false;
+var speed = 1.6;
+var prevTime = null;
+var deltaTime = 1 / 60; // set reasonable starting delta time
 
 var colorTop = new THREE.Color(0xdc72aa);
 var colorMiddle = new THREE.Color(0xfbdfd3);
@@ -203,7 +205,12 @@ function animate(time) {
     if (!startTime) startTime = time;
     if (!currentTime) currentTime = time;
 
-    currentTime += speed;
+    if (prevTime) {
+      deltaTime = time - prevTime;
+    }
+    prevTime = time;
+
+    currentTime += speed * deltaTime;
     gotime = TWEEN.Easing.Sinusoidal.InOut(Math.min(currentTime / 70000, 1)) * 0.9999;
 
     var pointA = cameraPath.getPointAt(gotime);
